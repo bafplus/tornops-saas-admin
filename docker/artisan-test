@@ -1,0 +1,1 @@
+* * * * * root /usr/local/bin/php /data/app/artisan list >> /tmp/artisan_test 2>&1

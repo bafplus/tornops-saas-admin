@@ -1,28 +1,27 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\FactionController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\PaymentController;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+use App\Http\Controllers\FactionController;
+use App\Http\Controllers\AuthController;
 
 // Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/order', [HomeController::class, 'order'])->name('order');
 
-// Payment webhook (called by cron or Torn API if supported)
-Route::post('/webhook/payment', [PaymentController::class, 'checkPayments'])->name('payment.webhook');
+// Auth
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Admin routes (require authentication)
+// Master key login (no auth needed)
+Route::match(['GET', 'POST'], '/master-login', [AuthController::class, 'masterLogin'])->name('master-login');
+
+// Admin routes (require auth)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin');
+    Route::get('/admin', [FactionController::class, 'dashboard'])->name('admin');
     
+    // Factions
     Route::get('/admin/factions', [FactionController::class, 'index'])->name('admin.factions');
     Route::post('/admin/factions', [FactionController::class, 'store'])->name('admin.factions.store');
     Route::get('/admin/factions/{faction}', [FactionController::class, 'show'])->name('admin.factions.show');

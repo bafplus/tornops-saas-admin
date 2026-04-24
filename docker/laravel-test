@@ -1,0 +1,1 @@
+* * * * * root /usr/local/bin/php /data/app/artisan schedule:run >> /tmp/laravel_test 2>&1

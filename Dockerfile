@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y \
     cron \
     sudo \
     libsqlite3-dev \
-    docker.io \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo \

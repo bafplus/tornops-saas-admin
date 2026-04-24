@@ -1,0 +1,38 @@
+{
+    "name": "TornOps - Faction Management",
+    "short_name": "TornOps",
+    "description": "Torn.com faction management tool with Target Finder and Jump Helper",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#1a1a2e",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/images/tornops-shield-background.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/images/tornops-shield-background.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["games", "utilities"],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Jump Helper",
+            "url": "/jumps",
+            "description": "Calculate gym stat gains and jumps"
+        },
+        {
+            "name": "Target Finder",
+            "url": "/target-finder",
+            "description": "Find attack targets using FFScout"
+        }
+    ]
+}
