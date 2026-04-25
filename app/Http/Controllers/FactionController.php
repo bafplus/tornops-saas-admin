@@ -18,7 +18,7 @@ class FactionController extends Controller
     public function index()
     {
         $factions = Faction::orderBy('created_at', 'desc')->get();
-        return view('admin.factions.index', compact('factions'));
+        return view('admin.factions', compact('factions'));
     }
 
     public function store(Request $request)
