@@ -14,6 +14,9 @@ return [
     'key' => env('APP_KEY'),
     'cipher' => 'AES-256-CBC',
     'master_key' => env('MASTER_KEY', ''),
+    'tornops_image' => env('TORN_OPS_IMAGE', 'ghcr.io/bafplus/tornops/tornops:latest'),
+    'data_volume_path' => env('DATA_VOLUME_PATH', '/data/tornops'),
+    'tornops_url' => env('TORN_OPS_URL', 'https://tornops.net'),
     'maintenance' => [
         'driver' => 'file',
     ],

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Docker;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 
 class DockerService
 {
@@ -22,43 +22,29 @@ class DockerService
         $dbPath = "{$this->volumePath}/{$slug}";
 
         try {
-            // Create volume directory
             $this->ensureVolumeDirectory($dbPath);
 
-            // Build environment variables
-            $env = [
-                "APP_NAME=TornOps-{$slug}",
-                "MASTER_KEY={$masterKey}",
-                "DB_DATABASE={$dbPath}/database.sqlite",
-            ];
+            $result = Process::run("docker run -d \
+                --name {$containerName} \
+                -e APP_NAME=TornOps-{$slug} \
+                -e MASTER_KEY={$masterKey} \
+                -e DB_CONNECTION=sqlite \
+                -e DB_DATABASE=/var/www/html/storage/database.sqlite \
+                -v {$dbPath}:/var/www/html/storage \
+                -e TORN_API_KEY=demo \
+                --restart unless-stopped \
+                {$this->image}");
 
-            // Pull latest image
-            Docker::pull($this->image);
+            if ($result->failed()) {
+                Log::error("Docker run failed", [
+                    'slug' => $slug,
+                    'output' => $result->output(),
+                    'error' => $result->error(),
+                ]);
+                return false;
+            }
 
-            // Create container
-            $container = Docker::createContainer([
-                'Image' => $this->image,
-                'Name' => $containerName,
-                'Env' => $env,
-                'HostConfig' => [
-                    'Binds' => [
-                        "{$dbPath}:/var/www/html/storage",
-                    ],
-                    'PortBindings' => [
-                        '80/tcp' => [
-                            ['HostPort' => '0'] // Let Docker assign port
-                        ]
-                    ],
-                    'RestartPolicy' => [
-                        'Name' => 'unless-stopped'
-                    ],
-                ],
-            ]);
-
-            Docker::start($container->getId());
-
-            // Get assigned port
-            $port = $this->getContainerPort($containerName);
+            $port = $this->getContainerPort($slug);
 
             Log::info("Created faction container", [
                 'slug' => $slug,
@@ -81,8 +67,8 @@ class DockerService
     {
         $containerName = "tornops-{$slug}";
         try {
-            Docker::start($containerName);
-            return true;
+            $result = Process::run("docker start {$containerName}");
+            return $result->successful();
         } catch (\Exception $e) {
             Log::error("Failed to start container", ['error' => $e->getMessage()]);
             return false;
@@ -93,8 +79,8 @@ class DockerService
     {
         $containerName = "tornops-{$slug}";
         try {
-            Docker::stop($containerName);
-            return true;
+            $result = Process::run("docker stop {$containerName}");
+            return $result->successful();
         } catch (\Exception $e) {
             Log::error("Failed to stop container", ['error' => $e->getMessage()]);
             return false;
@@ -105,7 +91,7 @@ class DockerService
     {
         $containerName = "tornops-{$slug}";
         try {
-            Docker::remove($containerName, ['force' => true]);
+            Process::run("docker rm -f {$containerName}");
             return true;
         } catch (\Exception $e) {
             Log::error("Failed to delete container", ['error' => $e->getMessage()]);
@@ -117,8 +103,11 @@ class DockerService
     {
         $containerName = "tornops-{$slug}";
         try {
-            $container = Docker::inspectContainer($containerName);
-            return $container['State']['Status'] ?? null;
+            $result = Process::run("docker inspect -f '{{.State.Status}}' {$containerName}");
+            if ($result->successful()) {
+                return trim($result->output());
+            }
+            return null;
         } catch (\Exception $e) {
             return null;
         }
@@ -128,15 +117,41 @@ class DockerService
     {
         $containerName = "tornops-{$slug}";
         try {
-            $container = Docker::inspectContainer($containerName);
-            $ports = $container['NetworkSettings']['Ports'] ?? [];
-            if (isset($ports['80/tcp'])) {
-                return (int) $ports['80/tcp'][0]['HostPort'];
+            $result = Process::run("docker port {$containerName} 80");
+            if ($result->successful()) {
+                $output = trim($result->output());
+                if (preg_match('/:(\d+)$/', $output, $matches)) {
+                    return (int) $matches[1];
+                }
             }
             return null;
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    public function listContainers(): array
+    {
+        $containers = [];
+        try {
+            $result = Process::run("docker ps -a --filter 'name=tornops-' --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'");
+            if ($result->successful()) {
+                $lines = explode("\n", trim($result->output()));
+                foreach ($lines as $line) {
+                    if ($line) {
+                        $parts = explode("\t", $line);
+                        $containers[] = [
+                            'name' => $parts[0] ?? '',
+                            'status' => $parts[1] ?? '',
+                            'ports' => $parts[2] ?? '',
+                        ];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // ignore
+        }
+        return $containers;
     }
 
     protected function ensureVolumeDirectory(string $path): void
