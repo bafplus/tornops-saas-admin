@@ -136,6 +136,7 @@ ENV;
         Process::run("cd {$instancePath} && php artisan key:generate 2>&1");
         Process::run("cd {$instancePath} && php artisan config:clear 2>&1");
         Process::run("cd {$instancePath} && php artisan migrate --force 2>&1");
+        Process::run("cd {$instancePath} && php artisan jobs:seed 2>&1");
     }
 
     protected function startServer(string $instancePath, int $port, string $slug): void
