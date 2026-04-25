@@ -3,16 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Faction;
-use App\Services\DockerService;
+use App\Services\FactionService;
 use Illuminate\Http\Request;
 
 class FactionController extends Controller
 {
-    protected DockerService $docker;
+    protected FactionService $faction;
 
-    public function __construct(DockerService $docker)
+    public function __construct(FactionService $faction)
     {
-        $this->docker = $docker;
+        $this->faction = $faction;
     }
 
     public function index()
@@ -41,7 +41,7 @@ class FactionController extends Controller
 
         // If marked as active immediately, create container
         if ($request->boolean('auto_create')) {
-            $this->docker->createFactionContainer($faction->slug, $faction->master_key);
+            $this->faction->createFactionContainer($faction->slug, $faction->master_key);
             $faction->update(['status' => Faction::STATUS_ACTIVE]);
         }
 
@@ -50,27 +50,27 @@ class FactionController extends Controller
 
     public function show(Faction $faction)
     {
-        $status = $this->docker->getContainerStatus($faction->slug);
+        $status = $this->faction->getContainerStatus($faction->slug);
         return view('admin.factions.show', compact('faction', 'status'));
     }
 
     public function start(Faction $faction)
     {
-        $this->docker->startContainer($faction->slug);
+        $this->faction->startContainer($faction->slug);
         return back()->with('success', 'Container started');
     }
 
     public function stop(Faction $faction)
     {
-        $this->docker->stopContainer($faction->slug);
+        $this->faction->stopContainer($faction->slug);
         return back()->with('success', 'Container stopped');
     }
 
     public function destroy(Request $request, Faction $faction)
     {
         // Stop and remove container
-        $this->docker->stopContainer($faction->slug);
-        $this->docker->deleteContainer($faction->slug);
+        $this->faction->stopContainer($faction->slug);
+        $this->faction->deleteContainer($faction->slug);
         
         // Delete database files
         $dbPath = config('app.data_volume_path') . '/' . $faction->slug;
