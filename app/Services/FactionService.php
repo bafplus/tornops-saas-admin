@@ -101,6 +101,7 @@ class FactionService
 
     protected function createEnv(string $instancePath, string $dbPath, string $masterKey, ?string $tornApiKey): void
     {
+        $apiKey = $tornApiKey ?: 'demo';
         $envContent = <<<ENV
 APP_NAME=TornOps-{$instancePath}
 APP_ENV=production
@@ -110,7 +111,7 @@ LOG_LEVEL=warning
 DB_CONNECTION=sqlite
 DB_DATABASE={$dbPath}
 MASTER_KEY={$masterKey}
-TORN_API_KEY={$tornApiKey ?: 'demo'}
+TORN_API_KEY={$apiKey}
 SESSION_DRIVER=file
 CACHE_STORE=file
 ENV;
