@@ -12,7 +12,8 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+      id-token: write
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,22 +28,11 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/tornops-saas-admin
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=
-            type=raw,value=latest,enable=true
-          
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/tornops-saas-admin:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/tornops-saas-admin:buildcache,mode=max
+          tags: ghcr.io/bafplus/tornops-saas-admin:latest,ghcr.io/bafplus/tornops-saas-admin:${{ github.sha }}
+          cache-from: type=registry,ref=ghcr.io/bafplus/tornops-saas-admin:buildcache
+          cache-to: type=registry,ref=ghcr.io/bafplus/tornops-saas-admin:buildcache,mode=max
