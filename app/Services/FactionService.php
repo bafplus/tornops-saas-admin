@@ -87,7 +87,7 @@ class FactionService
     protected function copySourceCode(string $instancePath): void
     {
         Process::run("mkdir -p {$instancePath}");
-        Process::run("cp -r {$this->sourcePath}/. {$instancePath}/");
+        Process::run("cd {$instancePath} && git clone https://github.com/bafplus/tornops.git .");
     }
 
     protected function setupDirectories(string $instancePath): void
