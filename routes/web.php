@@ -19,7 +19,9 @@ Route::match(['GET', 'POST'], '/master-login', [AuthController::class, 'masterLo
 
 // Admin routes (require auth)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/admin', [FactionController::class, 'dashboard'])->name('admin');
+    Route::get('/admin', function () {
+    return redirect()->route('admin.factions');
+})->name('admin');
     
     // Factions
     Route::get('/admin/factions', [FactionController::class, 'index'])->name('admin.factions');

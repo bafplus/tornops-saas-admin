@@ -66,7 +66,7 @@ class AuthController extends Controller
             if ($adminUser) {
                 Auth::login($adminUser);
                 $request->session()->regenerate();
-                return redirect()->intended('/admin');
+                return redirect()->intended('/admin/factions');
             }
         }
         
