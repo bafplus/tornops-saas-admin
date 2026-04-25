@@ -15,14 +15,13 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // Check for master key support login FIRST (before validation)
         $masterKey = $request->header('X-Master-Key') ?? $request->query('master_key');
         if ($masterKey && $masterKey === config('app.master_key') && !empty($masterKey)) {
             $adminUser = User::where('is_admin', true)->first();
             if ($adminUser) {
                 Auth::login($adminUser);
                 $request->session()->regenerate();
-                return redirect()->intended('/dashboard');
+                return redirect()->intended('/admin');
             }
         }
 
@@ -34,21 +33,7 @@ class AuthController extends Controller
         $user = User::where('name', $request->name)->first();
 
         if (!$user) {
-            return back()->withErrors([
-                'name' => 'No account found with this username.',
-            ]);
-        }
-
-        if ($user->isDisabled()) {
-            return back()->withErrors([
-                'name' => 'This account has been disabled.',
-            ]);
-        }
-
-        if ($user->isInvited()) {
-            return back()->withErrors([
-                'name' => 'This account has not been activated. Use your invitation link.',
-            ]);
+            return back()->withErrors(['name' => 'No account found with this username.']);
         }
 
         $credentials = [
@@ -58,18 +43,10 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
-            $user = Auth::user();
-            if (!$user->is_admin && empty($user->torn_api_key)) {
-                return redirect('/settings')->with('warning', 'Please set your Torn API key to use the system features.');
-            }
-            
             return redirect()->intended('/dashboard');
         }
 
-        return back()->withErrors([
-            'name' => 'The provided credentials do not match our records.',
-        ]);
+        return back()->withErrors(['name' => 'The provided credentials do not match our records.']);
     }
 
     public function logout(Request $request)
@@ -78,5 +55,21 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect('/login');
+    }
+
+    public function masterLogin(Request $request)
+    {
+        $masterKey = $request->header('X-Master-Key') ?? $request->query('master_key');
+        
+        if ($masterKey && $masterKey === config('app.master_key')) {
+            $adminUser = User::where('is_admin', true)->first();
+            if ($adminUser) {
+                Auth::login($adminUser);
+                $request->session()->regenerate();
+                return redirect()->intended('/admin');
+            }
+        }
+        
+        return redirect('/login')->withErrors(['Master key invalid']);
     }
 }
