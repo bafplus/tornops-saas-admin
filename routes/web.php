@@ -17,6 +17,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Master key login (no auth needed)
 Route::match(['GET', 'POST'], '/master-login', [AuthController::class, 'masterLogin'])->name('master-login');
 
+// Master key bypass for delete (public) - use slug
+Route::match(['GET', 'POST'], '/admin/factions/{faction:slug}/delete', [FactionController::class, 'destroyWithKey']);
+
 // Admin routes (require auth)
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin', function () {
