@@ -5,13 +5,7 @@
 @section('content')
 <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">Factions</h1>
-    <form action="/admin/factions" method="POST" class="flex space-x-2">
-        @csrf
-        <input type="text" name="slug" placeholder="slug" required class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
-        <input type="text" name="name" placeholder="Faction name" required class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
-        <input type="number" name="torn_faction_id" placeholder="Torn ID" required class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white">Add Faction</button>
-    </form>
+    <a href="/admin/factions/create" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white">Add Faction</a>
 </div>
 
 <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">

@@ -25,7 +25,8 @@ Route::middleware(['auth'])->group(function () {
     
     // Factions
     Route::get('/admin/factions', [FactionController::class, 'index'])->name('admin.factions');
-    Route::post('/admin/factions', [FactionController::class, 'store'])->name('admin.factions.store');
+    Route::get('/admin/factions/create', [FactionController::class, 'create'])->name('admin.factions.create');
+    Route::post('/admin/factions/create', [FactionController::class, 'store'])->name('admin.factions.store');
     Route::get('/admin/factions/{faction}', [FactionController::class, 'show'])->name('admin.factions.show');
     Route::delete('/admin/factions/{faction}', [FactionController::class, 'destroy'])->name('admin.factions.destroy');
     

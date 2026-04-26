@@ -21,6 +21,11 @@ class FactionController extends Controller
         return view('admin.factions', compact('factions'));
     }
 
+    public function create()
+    {
+        return view('admin.factions.create');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
