@@ -264,9 +264,24 @@ ENV;
         }
         
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
-        return json_decode($response, true) ?: [];
+        $result = json_decode($response, true) ?: [];
+        
+        // Check for API errors
+        if (!$result['success'] ?? true) {
+            $error = $result['errors'][0]['message'] ?? 'Unknown API error';
+            Log::error("Cloudflare API error", [
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'error' => $error,
+                'http_code' => $httpCode,
+            ]);
+            throw new \Exception("Cloudflare API error: {$error}");
+        }
+        
+        return $result;
     }
 
     public function startInstance(string $slug): bool
