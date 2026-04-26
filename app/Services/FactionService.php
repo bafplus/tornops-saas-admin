@@ -132,7 +132,7 @@ ENV;
         }
     }
 
-    protected function setupDatabase(string $instancePath, string $dbPath): void
+protected function setupDatabase(string $instancePath, string $dbPath): void
     {
         Log::info("Starting setupDatabase", ['path' => $instancePath]);
         Process::run("touch {$dbPath} && chmod 666 {$dbPath}");
@@ -141,14 +141,13 @@ ENV;
         $compResult = Process::run("cd {$instancePath} && composer install --no-interaction 2>&1");
         Log::info("Composer install", ['output' => $compResult->output(), 'success' => $compResult->successful()]);
         
-        // Fix .env permissions (composer may reset it)
-        Process::run("chmod 644 {$instancePath}/.env 2>/dev/null || true");
-        
-        $keyResult = Process::run("cd {$instancePath} && php artisan key:generate --force 2>&1");
-        Log::info("Key generate", ['output' => $keyResult->output(), 'success' => $keyResult->successful()]);
-        
-        // Fix again after key:generate
-        Process::run("chmod 644 {$instancePath}/.env 2>/dev/null || true");
+        // Generate a new APP_KEY and write directly to .env (bypass permission issues)
+        $appKey = base64_encode(random_bytes(16));
+        $envFile = "{$instancePath}/.env";
+        $envContent = file_get_contents($envFile);
+        $envContent = preg_replace('/APP_KEY=.*/', "APP_KEY=base64:{$appKey}", $envContent);
+        file_put_contents($envFile, $envContent);
+        chmod($envFile, 644);
         
         Process::run("cd {$instancePath} && php artisan config:clear 2>&1");
         $migResult = Process::run("cd {$instancePath} && php artisan migrate --force 2>&1");
@@ -157,7 +156,7 @@ ENV;
         $jobsResult = Process::run("cd {$instancePath} && php artisan jobs:seed 2>&1");
         Log::info("Jobs seed", ['output' => $jobsResult->output(), 'success' => $jobsResult->successful()]);
     }
-
+    
     protected function startServer(string $instancePath, int $port, string $slug): void
     {
         Log::info("Starting server", ['slug' => $slug, 'port' => $port, 'path' => $instancePath]);
