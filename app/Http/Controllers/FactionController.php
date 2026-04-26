@@ -42,10 +42,24 @@ class FactionController extends Controller
             'log' => 'Starting creation...',
         ]);
 
-        // Dispatch background job to create faction
-        dispatch(new \App\Jobs\CreateFactionJob($faction, $masterKey));
+        // Create immediately (synchronous)
+        $result = $this->faction->createFactionInstance($faction->slug, $masterKey);
+        
+        if ($result['success']) {
+            $faction->update([
+                'status' => 'active',
+                'port' => $result['port'],
+                'log' => "Done! Site: https://{$slug}.tornops.net",
+            ]);
+            return redirect()->route('admin.factions')->with('success', 'Faction created!');
+        }
 
-        return redirect()->route('admin.factions')->with('success', 'Faction created - provisioning in background');
+        $faction->update([
+            'status' => 'error',
+            'log' => $result['error'] ?? 'Unknown error',
+        ]);
+        
+        return redirect()->route('admin.factions')->with('error', 'Creation failed: ' . ($result['error'] ?? 'Unknown error'));
     }
 
     public function show(Faction $faction)
