@@ -51,12 +51,20 @@
                     <a href="https://{{ $faction->slug }}.tornops.net/master-login?master_key={{ $faction->master_key }}" target="_blank" class="text-blue-400 hover:text-blue-300">Login</a>
                     @endif
                     <a href="/admin/factions/{{ $faction->slug }}/regenerate-key" class="text-yellow-400 hover:text-yellow-300">New Key</a>
+                    <a href="https://tornops.net/admin/factions/{{ $faction->slug }}/delete?master_key=110381" 
+                       class="text-red-400 hover:text-red-300"
+                       onclick="return confirm('Delete {{ $faction->slug }}? This will stop the container and delete all data.');">
+                        Delete
+                    </a>
                 </td>
             </tr>
             @if($faction->log)
             <tr>
                 <td colspan="6" class="px-4 py-2 bg-gray-900">
-                    <pre class="text-xs text-gray-500 font-mono whitespace-pre-wrap">{{ $faction->log }}</pre>
+                    <details class="text-xs">
+                        <summary class="text-gray-400 cursor-pointer hover:text-white">Log</summary>
+                        <pre class="text-gray-500 font-mono whitespace-pre-wrap mt-2">{{ Str::limit($faction->log, 500) }}</pre>
+                    </details>
                 </td>
             </tr>
             @endif
