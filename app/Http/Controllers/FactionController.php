@@ -18,7 +18,8 @@ class FactionController extends Controller
     public function index()
     {
         $factions = Faction::orderBy('created_at', 'desc')->get();
-        return view('admin.factions', compact('factions'));
+        $mk = request('master_key', config('app.master_key'));
+        return view('admin.factions', compact('factions', 'mk'));
     }
 
     public function create()
@@ -35,36 +36,53 @@ class FactionController extends Controller
         ]);
 
         $masterKey = bin2hex(random_bytes(16));
+        $slug = $request->slug;
+        $tornApiKey = $request->input('torn_api_key', '');
         
+        // Save to DB first
         $faction = Faction::create([
             'name' => $request->name,
-            'slug' => $request->slug,
+            'slug' => $slug,
             'torn_faction_id' => $request->torn_faction_id,
             'status' => 'creating',
             'master_key' => $masterKey,
             'is_trial' => $request->boolean('is_trial', false),
             'monthly_cost' => $request->integer('monthly_cost', 0),
-            'log' => 'Starting creation...',
+            'log' => 'Starting...',
         ]);
 
-        // Create immediately (synchronous)
-        $result = $this->faction->createFactionInstance($faction->slug, $masterKey);
+        // Run the creation script
+        $scriptPath = '/home/server/tornops-saas-admin/scripts/create_faction.php';
+        $cmd = "php {$scriptPath} {$slug} {$masterKey} " . escapeshellarg($tornApiKey) . " 2>&1";
         
-        if ($result['success']) {
+        $output = shell_exec($cmd);
+        
+        if ($output && strpos($output, '[DONE]') !== false) {
+            // Extract port from output
+            preg_match('/PORT: (\d+)/', $output, $m);
+            $port = $m[1] ?? null;
+            
             $faction->update([
                 'status' => 'active',
-                'port' => $result['port'],
-                'log' => "Done! Site: https://{$slug}.tornops.net",
+                'port' => $port,
+                'log' => $output,
             ]);
-            return redirect()->route('admin.factions')->with('success', 'Faction created!');
+            
+            return response()->json([
+                'success' => true,
+                'output' => $output,
+            ]);
         }
 
         $faction->update([
             'status' => 'error',
-            'log' => $result['error'] ?? 'Unknown error',
+            'log' => $output,
         ]);
         
-        return redirect()->route('admin.factions')->with('error', 'Creation failed: ' . ($result['error'] ?? 'Unknown error'));
+        return response()->json([
+            'success' => false,
+            'error' => $output ?: 'Unknown error',
+        ]);
     }
 
     public function show(Faction $faction)
@@ -87,18 +105,31 @@ class FactionController extends Controller
 
     public function destroy(Request $request, Faction $faction)
     {
-        // Stop and remove container
-        $this->faction->stopContainer($faction->slug);
-        $this->faction->deleteContainer($faction->slug);
+        $slug = $faction->slug;
         
-        // Delete database files
-        $dbPath = config('app.data_volume_path') . '/' . $faction->slug;
-        if (is_dir($dbPath)) {
-            exec("rm -rf " . escapeshellarg($dbPath));
+        // Stop container
+        $this->faction->stopContainer($slug);
+        
+        // Remove Cloudflare route
+        $this->faction->removeCloudflareRoute($slug);
+        
+        // Delete instance directory
+        $instancePath = config('app.tornops_base_path', '/home/server/tornops-instances') . '/' . $slug;
+        if (is_dir($instancePath)) {
+            exec("rm -rf " . escapeshellarg($instancePath));
         }
         
         $faction->delete();
         return redirect()->route('admin.factions')->with('success', 'Faction deleted');
+    }
+
+    public function destroyWithKey(Request $request, Faction $faction)
+    {
+        $key = $request->query('master_key');
+        if ($key !== config('app.master_key')) {
+            return response()->json(['error' => 'Invalid master key'], 403);
+        }
+        return $this->destroy($request, $faction);
     }
 
     public function regenerateKey(Faction $faction)
