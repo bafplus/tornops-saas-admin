@@ -29,23 +29,23 @@ class FactionController extends Controller
             'torn_faction_id' => 'required|integer',
         ]);
 
+        $masterKey = bin2hex(random_bytes(16));
+        
         $faction = Faction::create([
             'name' => $request->name,
             'slug' => $request->slug,
             'torn_faction_id' => $request->torn_faction_id,
-            'status' => Faction::STATUS_PENDING,
-            'master_key' => bin2hex(random_bytes(16)),
+            'status' => 'creating',
+            'master_key' => $masterKey,
             'is_trial' => $request->boolean('is_trial', false),
             'monthly_cost' => $request->integer('monthly_cost', 0),
+            'log' => 'Starting creation...',
         ]);
 
-        // If marked as active immediately, create container
-        if ($request->boolean('auto_create')) {
-            $this->faction->createFactionContainer($faction->slug, $faction->master_key);
-            $faction->update(['status' => Faction::STATUS_ACTIVE]);
-        }
+        // Dispatch background job to create faction
+        dispatch(new \App\Jobs\CreateFactionJob($faction, $masterKey));
 
-        return redirect()->route('admin.factions.show', $faction)->with('success', 'Faction created');
+        return redirect()->route('admin.factions')->with('success', 'Faction created - provisioning in background');
     }
 
     public function show(Faction $faction)

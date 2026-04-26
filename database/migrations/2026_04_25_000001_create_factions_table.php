@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('name');
             $table->integer('torn_faction_id');
             $table->string('status', 20)->default('pending');
+            $table->integer('port')->nullable();
+            $table->text('log')->nullable();
             $table->boolean('is_trial')->default(false);
             $table->integer('monthly_cost')->default(0);
             $table->integer('payment_item_id')->nullable();

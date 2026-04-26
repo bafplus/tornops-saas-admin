@@ -21,6 +21,8 @@ class Faction extends Model
         'last_login_at',
         'created_at',
         'expires_at',
+        'port',
+        'log',
     ];
 
     protected $casts = [
@@ -29,6 +31,7 @@ class Faction extends Model
         'payment_item_last_checked' => 'datetime',
         'last_login_at' => 'datetime',
         'expires_at' => 'datetime',
+        'port' => 'integer',
     ];
 
     const STATUS_ACTIVE = 'active';
