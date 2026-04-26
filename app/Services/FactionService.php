@@ -149,7 +149,10 @@ protected function setupDatabase(string $instancePath, string $dbPath): void
         file_put_contents($envFile, $envContent);
         chmod($envFile, 644);
         
+        // Clear any cached config
+        Process::run("rm -f {$instancePath}/bootstrap/cache/*.php 2>/dev/null");
         Process::run("cd {$instancePath} && php artisan config:clear 2>&1");
+        
         $migResult = Process::run("cd {$instancePath} && php artisan migrate --force 2>&1");
         Log::info("Migrate", ['output' => $migResult->output(), 'success' => $migResult->successful()]);
         
