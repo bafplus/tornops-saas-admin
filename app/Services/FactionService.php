@@ -141,16 +141,21 @@ ENV;
         $compResult = Process::run("cd {$instancePath} && composer install --no-interaction 2>&1");
         Log::info("Composer install", ['output' => $compResult->output(), 'success' => $compResult->successful()]);
         
-        Process::run("chmod 644 {$instancePath}/.env");
+        // Fix .env permissions (composer may reset it)
+        Process::run("chmod 644 {$instancePath}/.env 2>/dev/null || true");
         
         $keyResult = Process::run("cd {$instancePath} && php artisan key:generate --force 2>&1");
         Log::info("Key generate", ['output' => $keyResult->output(), 'success' => $keyResult->successful()]);
+        
+        // Fix again after key:generate
+        Process::run("chmod 644 {$instancePath}/.env 2>/dev/null || true");
         
         Process::run("cd {$instancePath} && php artisan config:clear 2>&1");
         $migResult = Process::run("cd {$instancePath} && php artisan migrate --force 2>&1");
         Log::info("Migrate", ['output' => $migResult->output(), 'success' => $migResult->successful()]);
         
-        Process::run("cd {$instancePath} && php artisan jobs:seed 2>&1");
+        $jobsResult = Process::run("cd {$instancePath} && php artisan jobs:seed 2>&1");
+        Log::info("Jobs seed", ['output' => $jobsResult->output(), 'success' => $jobsResult->successful()]);
     }
 
     protected function startServer(string $instancePath, int $port, string $slug): void
