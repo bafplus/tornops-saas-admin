@@ -164,10 +164,16 @@ protected function setupDatabase(string $instancePath, string $dbPath): void
     {
         Log::info("Starting server", ['slug' => $slug, 'port' => $port, 'path' => $instancePath]);
         
+        // Wait a moment to ensure .env is ready
+        usleep(500000); // 0.5 second
+        
         $cmd = "cd {$instancePath} && nohup php -S 0.0.0.0:{$port} -t public > /tmp/tornops-{$slug}.log 2>&1 &";
         Log::info("Running start command", ['cmd' => $cmd]);
         
         exec($cmd);
+        
+        // Wait for server to be ready
+        usleep(500000); // 0.5 second
         
         Log::info("Server started", ['slug' => $slug]);
     }
