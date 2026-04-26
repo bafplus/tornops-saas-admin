@@ -107,20 +107,27 @@ class FactionController extends Controller
     {
         $slug = $faction->slug;
         
-        // Stop container
-        $this->faction->stopContainer($slug);
-        
-        // Remove Cloudflare route
-        $this->faction->removeCloudflareRoute($slug);
-        
-        // Delete instance directory
-        $instancePath = config('app.tornops_base_path', '/home/server/tornops-instances') . '/' . $slug;
-        if (is_dir($instancePath)) {
-            exec("rm -rf " . escapeshellarg($instancePath));
+        try {
+            // Stop container
+            $this->faction->stopContainer($slug);
+            
+            // Remove Cloudflare route
+            $this->faction->removeCloudflareRoute($slug);
+            
+            // Delete instance directory
+            $instancePath = config('app.tornops_base_path', '/home/server/tornops-instances') . '/' . $slug;
+            if (is_dir($instancePath)) {
+                exec("rm -rf " . escapeshellarg($instancePath));
+            }
+            
+            // Delete from DB last (only if earlier steps didn't throw)
+            $faction->delete();
+            
+            return redirect()->route('admin.factions')->with('success', 'Faction deleted');
+        } catch (\Exception $e) {
+            // Don't delete from DB if any step failed
+            return redirect()->route('admin.factions')->with('error', 'Delete failed: ' . $e->getMessage());
         }
-        
-        $faction->delete();
-        return redirect()->route('admin.factions')->with('success', 'Faction deleted');
     }
 
     public function destroyWithKey(Request $request, Faction $faction)
