@@ -340,4 +340,25 @@ ENV;
         } catch (\Exception $e) {}
         return $this->getNextPort();
     }
+
+    // Aliases for backward compatibility
+    public function getContainerStatus(string $slug): ?string
+    {
+        return $this->getInstanceStatus($slug);
+    }
+
+    public function startContainer(string $slug): bool
+    {
+        return $this->startInstance($slug);
+    }
+
+    public function stopContainer(string $slug): bool
+    {
+        return $this->stopInstance($slug);
+    }
+
+    public function deleteContainer(string $slug): bool
+    {
+        return $this->deleteInstance($slug);
+    }
 }
