@@ -142,10 +142,17 @@ protected function setupDatabase(string $instancePath, string $dbPath): void
         Log::info("Composer install", ['output' => $compResult->output(), 'success' => $compResult->successful()]);
         
         // Generate a new APP_KEY and write directly to .env (bypass permission issues)
-        $appKey = base64_encode(random_bytes(16));
+        $appKey = 'base64:' . bin2hex(random_bytes(16));
         $envFile = "{$instancePath}/.env";
         $envContent = file_get_contents($envFile);
-        $envContent = preg_replace('/APP_KEY=.*/', "APP_KEY=base64:{$appKey}", $envContent);
+        // Replace APP_KEY line (exact match)
+        $lines = explode("\n", $envContent);
+        foreach ($lines as $i => $line) {
+            if (str_starts_with(trim($line), 'APP_KEY=')) {
+                $lines[$i] = 'APP_KEY=' . $appKey;
+            }
+        }
+        $envContent = implode("\n", $lines);
         file_put_contents($envFile, $envContent);
         chmod($envFile, 644);
         
