@@ -102,6 +102,7 @@ class FactionService
     protected function createEnv(string $instancePath, string $dbPath, string $masterKey, ?string $tornApiKey): void
     {
         $apiKey = $tornApiKey ?: 'demo';
+        $appKey = 'base64:' . bin2hex(random_bytes(16));
         $envContent = <<<ENV
 APP_NAME=TornOps-{$instancePath}
 APP_ENV=production
@@ -114,10 +115,11 @@ MASTER_KEY={$masterKey}
 TORN_API_KEY={$apiKey}
 SESSION_DRIVER=file
 CACHE_STORE=file
+APP_KEY={$appKey}
 ENV;
         
         file_put_contents("{$instancePath}/.env", $envContent);
-        chmod("{$instancePath}/.env", 600);
+        chmod("{$instancePath}/.env", 644);
     }
 
     protected function fixDataPath(string $instancePath): void
@@ -132,17 +134,35 @@ ENV;
 
     protected function setupDatabase(string $instancePath, string $dbPath): void
     {
+        Log::info("Starting setupDatabase", ['path' => $instancePath]);
         Process::run("touch {$dbPath} && chmod 666 {$dbPath}");
-        Process::run("cd {$instancePath} && php artisan key:generate 2>&1");
+        Log::info("Touched database", ['path' => $dbPath]);
+        
+        $compResult = Process::run("cd {$instancePath} && composer install --no-interaction 2>&1");
+        Log::info("Composer install", ['output' => $compResult->output(), 'success' => $compResult->successful()]);
+        
+        Process::run("chmod 644 {$instancePath}/.env");
+        
+        $keyResult = Process::run("cd {$instancePath} && php artisan key:generate --force 2>&1");
+        Log::info("Key generate", ['output' => $keyResult->output(), 'success' => $keyResult->successful()]);
+        
         Process::run("cd {$instancePath} && php artisan config:clear 2>&1");
-        Process::run("cd {$instancePath} && php artisan migrate --force 2>&1");
+        $migResult = Process::run("cd {$instancePath} && php artisan migrate --force 2>&1");
+        Log::info("Migrate", ['output' => $migResult->output(), 'success' => $migResult->successful()]);
+        
         Process::run("cd {$instancePath} && php artisan jobs:seed 2>&1");
     }
 
     protected function startServer(string $instancePath, int $port, string $slug): void
     {
-        Process::run("pkill -f 'tornops-instances/{$slug}' 2>/dev/null || true");
-        Process::run("cd {$instancePath} && nohup php -S 0.0.0.0:{$port} -t public > /tmp/tornops-{$slug}.log 2>&1 &");
+        Log::info("Starting server", ['slug' => $slug, 'port' => $port, 'path' => $instancePath]);
+        
+        $cmd = "cd {$instancePath} && nohup php -S 0.0.0.0:{$port} -t public > /tmp/tornops-{$slug}.log 2>&1 &";
+        Log::info("Running start command", ['cmd' => $cmd]);
+        
+        exec($cmd);
+        
+        Log::info("Server started", ['slug' => $slug]);
     }
 
     public function addCloudflareRoute(string $slug, int $port): void
