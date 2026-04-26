@@ -2,4 +2,4 @@
 /vendor/
 /storage/*.key
 /storage/logs/*.log
-/database/database.sqlite
+/database/database.sqlitebootstrap/cache/*.php
