@@ -54,8 +54,8 @@
                 <td class="px-4 py-3 space-x-2">
                     @if($faction->status === 'active')
                     <a href="https://{{ $faction->slug }}.tornops.net" target="_blank" class="text-green-400 hover:text-green-300">Visit</a>
+                    <a href="https://{{ $faction->slug }}.tornops.net/master-login?master_key={{ $faction->master_key }}" target="_blank" class="text-blue-400 hover:text-blue-300">Login</a>
                     @endif
-                    <a href="/admin/factions/{{ $faction->slug }}/login?master_key={{ $faction->master_key }}" class="text-blue-400 hover:text-blue-300">Login</a>
                     <a href="/admin/factions/{{ $faction->slug }}/regenerate-key" class="text-yellow-400 hover:text-yellow-300">New Key</a>
                 </td>
             </tr>
