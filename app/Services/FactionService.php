@@ -175,6 +175,21 @@ protected function setupDatabase(string $instancePath, string $dbPath): void
         // Wait for server to be ready
         usleep(500000); // 0.5 second
         
+        // Verify APP_KEY exists, fix if needed
+        $keyCheck = "cd {$instancePath} && php -r \"echo config('app.key');\" 2>&1";
+        $keyResult = [];
+        exec($keyCheck, $keyResult);
+        if (empty(trim(implode('', $keyResult)))) {
+            Log::info("APP_KEY still missing, fixing after start");
+            $appKey = base64_encode(random_bytes(16));
+            $envFile = "{$instancePath}/.env";
+            $envContent = file_get_contents($envFile);
+            $envContent = preg_replace('/APP_KEY=.*/', "APP_KEY=base64:{$appKey}", $envContent);
+            file_put_contents($envFile, $envContent);
+            chmod($envFile, 644);
+            exec("cd {$instancePath} && php artisan config:clear >/dev/null 2>&1");
+        }
+        
         Log::info("Server started", ['slug' => $slug]);
     }
 
