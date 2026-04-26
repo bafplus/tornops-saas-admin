@@ -216,8 +216,8 @@ ENV;
     {
         $hostname = "{$slug}.{$this->domain}";
         
-        // Delete DNS record
-        $dnsRecords = $this->cfRequest('GET', "/zones/{$this->cloudflareZoneId}/dns_records?name={$slug}");
+        // Delete DNS record - use full hostname
+        $dnsRecords = $this->cfRequest('GET', "/zones/{$this->cloudflareZoneId}/dns_records?name={$hostname}");
         foreach ($dnsRecords['result'] ?? [] as $record) {
             if ($record['name'] === $hostname) {
                 $this->cfRequest('DELETE', "/zones/{$this->cloudflareZoneId}/dns_records/{$record['id']}");
