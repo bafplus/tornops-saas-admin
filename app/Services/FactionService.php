@@ -180,21 +180,36 @@ ENV;
         // Get current tunnel config
         $config = $this->cfRequest('GET', "/accounts/{$this->cloudflareAccountId}/cfd_tunnel/{$this->cloudflareTunnelId}/configurations");
         
-        // Add new ingress rule
+        // Add new ingress rule (before tornops.net to take priority)
         $ingress = $config['result']['config']['ingress'] ?? [];
-        array_unshift($ingress, [
+        
+        // Find position of tornops.net and insert before it
+        $newRule = [
             'hostname' => $hostname,
             'service' => "http://217.154.154.7:{$port}",
             'originRequest' => (object)[],
-        ]);
+        ];
+        
+        $newIngress = [];
+        foreach ($ingress as $rule) {
+            if (($rule['hostname'] ?? '') === 'tornops.net') {
+                $newIngress[] = $newRule;
+            }
+            $newIngress[] = $rule;
+        }
         
         // Save new config
-        $this->cfRequest('PUT', "/accounts/{$this->cloudflareAccountId}/cfd_tunnel/{$this->cloudflareTunnelId}/configurations", [
-            'config' => [
-                'ingress' => $ingress,
-                'warp-routing' => ['enabled' => false],
-            ],
-        ]);
+        try {
+            $this->cfRequest('PUT', "/accounts/{$this->cloudflareAccountId}/cfd_tunnel/{$this->cloudflareTunnelId}/configurations", [
+                'config' => [
+                    'ingress' => $newIngress,
+                    'warp-routing' => ['enabled' => false],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Tunnel route failed", ['error' => $e->getMessage()]);
+            throw $e;
+        }
     }
 
     public function removeCloudflareRoute(string $slug): void
