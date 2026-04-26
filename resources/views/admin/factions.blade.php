@@ -51,7 +51,7 @@
                     <a href="https://{{ $faction->slug }}.tornops.net/master-login?master_key={{ $faction->master_key }}" target="_blank" class="text-blue-400 hover:text-blue-300">Login</a>
                     @endif
                     <a href="/admin/factions/{{ $faction->slug }}/regenerate-key" class="text-yellow-400 hover:text-yellow-300">New Key</a>
-                    <a href="https://tornops.net/admin/factions/{{ $faction->slug }}/delete?master_key=110381" 
+                    <a href="https://tornops.net/admin/factions/{{ $faction->slug }}/delete?master_key={{ $mk }}" 
                        class="text-red-400 hover:text-red-300"
                        onclick="return confirm('Delete {{ $faction->slug }}? This will stop the container and delete all data.');">
                         Delete
