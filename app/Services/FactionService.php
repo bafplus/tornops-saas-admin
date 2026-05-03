@@ -200,11 +200,26 @@ class FactionService
         $registry = 'https://ghcr.io/v2';
         $imagePath = 'bafplus/tornops/tornops';
 
-        // Get current local digest
-        exec("docker image inspect {$image} --format '{{.Id}}'", $localOutput);
-        $localDigest = $localOutput[0] ?? '';
+        // Get current local image digest from docker pull check
+        exec("docker pull {$image} 2>&1", $pullOutput, $pullExit);
+        $localDigest = '';
+        foreach ($pullOutput as $line) {
+            if (str_starts_with($line, 'Digest: ')) {
+                $localDigest = trim(substr($line, 8));
+                break;
+            }
+        }
+        if (empty($localDigest)) {
+            // Fallback: get from inspect
+            exec("docker image inspect {$image} --format '{{.Id}}'", $inspectOutput);
+            $localDigest = $inspectOutput[0] ?? '';
+        }
+        $localSha = '';
+        if (preg_match('/sha256:[a-f0-9]+/', $localDigest, $m)) {
+            $localSha = $m[0];
+        }
 
-        // Get latest remote digest via GHCR API
+        // Get latest remote OCI index via GHCR API
         $tokenUrl = "https://ghcr.io/token?scope=repository:{$imagePath}:pull";
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $tokenUrl);
@@ -224,7 +239,8 @@ class FactionService
             'Accept: application/vnd.oci.image.index.v1+json'
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $manifestResponse = curl_exec($ch);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
@@ -232,23 +248,18 @@ class FactionService
             return ['update_available' => false, 'error' => "Failed to fetch manifest (HTTP {$httpCode})"];
         }
 
-        $manifest = json_decode($manifestResponse, true);
-
-        // OCI index contains a list of manifests per platform
-        // Get the first manifest's digest
-        $remoteDigest = '';
-        if (isset($manifest['manifests'][0]['digest'])) {
-            $remoteDigest = $manifest['manifests'][0]['digest'];
-        } elseif (isset($manifest['config']['digest'])) {
-            $remoteDigest = $manifest['config']['digest'];
+        // Extract Docker-Content-Digest header (this is the true digest of the OCI index)
+        $remoteSha = '';
+        if (preg_match('/Docker-Content-Digest:\s*(sha256:[a-f0-9]+)/i', $response, $m)) {
+            $remoteSha = $m[1];
         }
 
-        $updateAvailable = !empty($remoteDigest) && !str_contains($localDigest, $remoteDigest);
+        $updateAvailable = $localSha !== $remoteSha;
 
         return [
             'update_available' => $updateAvailable,
-            'current_digest' => substr($localDigest, 0, 20) . '...',
-            'remote_digest' => substr($remoteDigest, 0, 20) . '...',
+            'current_digest' => substr($localSha, 0, 25) . '...',
+            'remote_digest' => substr($remoteSha, 0, 25) . '...',
         ];
     }
 
