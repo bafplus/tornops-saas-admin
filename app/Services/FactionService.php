@@ -221,7 +221,7 @@ class FactionService
         curl_setopt($ch, CURLOPT_URL, "{$registry}/{$imagePath}/manifests/latest");
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Authorization: Bearer {$token}",
-            'Accept: application/vnd.docker.distribution.manifest.v2+json'
+            'Accept: application/vnd.oci.image.index.v1+json'
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $manifestResponse = curl_exec($ch);
@@ -229,11 +229,19 @@ class FactionService
         curl_close($ch);
 
         if ($httpCode !== 200) {
-            return ['update_available' => false, 'error' => 'Failed to fetch manifest'];
+            return ['update_available' => false, 'error' => "Failed to fetch manifest (HTTP {$httpCode})"];
         }
 
         $manifest = json_decode($manifestResponse, true);
-        $remoteDigest = $manifest['config']['digest'] ?? '';
+
+        // OCI index contains a list of manifests per platform
+        // Get the first manifest's digest
+        $remoteDigest = '';
+        if (isset($manifest['manifests'][0]['digest'])) {
+            $remoteDigest = $manifest['manifests'][0]['digest'];
+        } elseif (isset($manifest['config']['digest'])) {
+            $remoteDigest = $manifest['config']['digest'];
+        }
 
         $updateAvailable = !empty($remoteDigest) && !str_contains($localDigest, $remoteDigest);
 
