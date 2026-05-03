@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  tornops:
+    image: ghcr.io/bafplus/tornops/tornops:latest
+    container_name: tornops
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=UTC
+
+# First run:
+# 1. Create ./data folder
+# 2. Create ./data/.env with your settings (see .env.example)
+# 3. Run: docker compose up -d
+#
+# To update: docker compose pull && docker compose restart
