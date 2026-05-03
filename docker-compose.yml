@@ -1,0 +1,23 @@
+services:
+  tornops-saas-admin:
+    build: .
+    container_name: tornops-saas-admin
+    restart: unless-stopped
+    user: root
+    ports:
+      - "8090:80"
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
+      - ../data:/data
+      - /home/server/tornops-instances:/home/server/tornops-instances
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/apache-site.conf:/etc/apache2/sites-available/000-default.conf
+    environment:
+      - DB_DATABASE=/data/database.sqlite
+    networks:
+      - tornops-network
+
+networks:
+  tornops-network:
+    driver: bridge
