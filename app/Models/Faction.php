@@ -14,7 +14,7 @@ class Faction extends Model
 
     protected $casts = [
         'is_trial' => 'boolean',
-        'amount' => 'decimal:2',
+        'amount' => 'integer',
     ];
 
     public function isRunning(): bool

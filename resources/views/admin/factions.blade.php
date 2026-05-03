@@ -72,7 +72,7 @@
                                 {{ $faction->payment ?? 'Due' }}
                             </span>
                         </td>
-                        <td class="p-2">£{{ number_format($faction->amount ?? 0, 2) }}</td>
+                        <td class="p-2">{{ $faction->amount ?? 0 }}</td>
                         <td class="p-2">
                             <span class="px-2 py-1 rounded {{ $faction->is_trial ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500' }}">
                                 {{ $faction->is_trial ? 'Free' : '-' }}

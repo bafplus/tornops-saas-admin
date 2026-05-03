@@ -44,8 +44,8 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label class="block mb-2">Amount (£)</label>
-                    <input type="number" name="amount" step="0.01" value="{{ $faction->amount ?? 0 }}" class="w-full border p-2 rounded">
+                    <label class="block mb-2">Amount (items)</label>
+                    <input type="number" name="amount" step="1" value="{{ $faction->amount ?? 0 }}" class="w-full border p-2 rounded">
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600">Save Changes</button>

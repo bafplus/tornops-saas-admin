@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('factions', function (Blueprint $table) {
             $table->enum('payment', ['Paid', 'Due', 'Disabled'])->default('Due')->after('is_trial');
-            $table->decimal('amount', 10, 2)->default(0)->after('payment');
+            $table->integer('amount')->default(0)->after('payment');
         });
     }
 

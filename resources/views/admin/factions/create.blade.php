@@ -42,8 +42,8 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label class="block mb-2">Amount (£)</label>
-                    <input type="number" name="amount" step="0.01" value="0" class="w-full border p-2 rounded">
+                    <label class="block mb-2">Amount (items)</label>
+                    <input type="number" name="amount" step="1" value="0" class="w-full border p-2 rounded">
                 </div>
                 <button type="submit" class="w-full bg-red-500 text-white p-2 rounded">Create Faction</button>
             </form>
