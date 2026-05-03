@@ -118,4 +118,27 @@ class FactionController extends Controller
         $this->factionService->regenerateKey($faction);
         return back()->with('success', 'Master key regenerated');
     }
+
+    public function checkUpdate()
+    {
+        $updateInfo = $this->factionService->checkForImageUpdate();
+        return back()->with('update_info', $updateInfo);
+    }
+
+    public function updateAll()
+    {
+        $results = $this->factionService->updateAllInstances();
+
+        if (!empty($results['errors'])) {
+            return back()->with('error', 'Update completed with errors: ' . implode(', ', $results['errors']));
+        }
+
+        $message = 'Update completed. ';
+        $message .= 'Stopped: ' . implode(', ', $results['stopped']) . '. ';
+        $message .= 'Started: ' . implode(', ', $results['started']) . '.';
+        $message .= $results['image_removed'] ? ' Image removed.' : ' Image removal failed.';
+        $message .= $results['image_pulled'] ? ' New image pulled.' : ' Image pull failed.';
+
+        return back()->with('success', $message);
+    }
 }

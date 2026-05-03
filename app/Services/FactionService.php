@@ -194,6 +194,87 @@ class FactionService
         return $newKey;
     }
 
+    public function checkForImageUpdate(): array
+    {
+        $image = $this->image;
+        $registry = 'https://ghcr.io/v2';
+        $imagePath = 'bafplus/tornops/tornops';
+
+        // Get current local digest
+        exec("docker image inspect {$image} --format '{{.Id}}'", $localOutput);
+        $localDigest = $localOutput[0] ?? '';
+
+        // Get latest remote digest via GHCR API
+        $tokenUrl = "https://ghcr.io/token?scope=repository:{$imagePath}:pull";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $tokenUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $tokenResponse = curl_exec($ch);
+        curl_close($ch);
+        $token = json_decode($tokenResponse, true)['token'] ?? '';
+
+        if (!$token) {
+            return ['update_available' => false, 'error' => 'Failed to get registry token'];
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "{$registry}/{$imagePath}/manifests/latest");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Authorization: Bearer {$token}",
+            'Accept: application/vnd.docker.distribution.manifest.v2+json'
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $manifestResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            return ['update_available' => false, 'error' => 'Failed to fetch manifest'];
+        }
+
+        $manifest = json_decode($manifestResponse, true);
+        $remoteDigest = $manifest['config']['digest'] ?? '';
+
+        $updateAvailable = !empty($remoteDigest) && !str_contains($localDigest, $remoteDigest);
+
+        return [
+            'update_available' => $updateAvailable,
+            'current_digest' => substr($localDigest, 0, 20) . '...',
+            'remote_digest' => substr($remoteDigest, 0, 20) . '...',
+        ];
+    }
+
+    public function updateAllInstances(): array
+    {
+        $results = ['stopped' => [], 'started' => [], 'image_removed' => false, 'image_pulled' => false, 'errors' => []];
+
+        // 1. Stop all running instances
+        $factions = Faction::all();
+        foreach ($factions as $faction) {
+            $this->stopContainer($faction->slug);
+            $results['stopped'][] = $faction->slug;
+        }
+
+        // 2. Remove old image
+        exec("docker image rm -f {$this->image} 2>&1", $rmOutput, $rmCode);
+        $results['image_removed'] = $rmCode === 0;
+
+        // 3. Pull new image
+        exec("docker pull {$this->image} 2>&1", $pullOutput, $pullCode);
+        $results['image_pulled'] = $pullCode === 0;
+        if ($pullCode !== 0) {
+            $results['errors'][] = 'Pull failed: ' . implode("\n", $pullOutput);
+        }
+
+        // 4. Start all instances
+        foreach ($factions as $faction) {
+            $this->startContainer($faction->slug);
+            $results['started'][] = $faction->slug;
+        }
+
+        return $results;
+    }
+
     private function addCloudflareDns(string $slug): void
     {
         $ch = curl_init();

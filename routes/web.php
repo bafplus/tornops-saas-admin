@@ -25,5 +25,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/factions/{faction}/regenerate-key', [FactionController::class, 'regenerateKey']);
     Route::get('/admin/factions/{faction}/edit', [FactionController::class, 'edit'])->name('admin.factions.edit');
     Route::put('/admin/factions/{faction}', [FactionController::class, 'update'])->name('admin.factions.update');
+    Route::get('/admin/check-update', [FactionController::class, 'checkUpdate'])->name('admin.check-update');
+    Route::post('/admin/update-all', [FactionController::class, 'updateAll'])->name('admin.update-all');
     Route::post('/admin/logout', [AuthController::class, 'logout']);
 });

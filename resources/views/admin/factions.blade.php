@@ -19,11 +19,32 @@
         @if(session('success'))
             <div class="bg-green-100 text-green-700 p-3 rounded mb-4">{{ session('success') }}</div>
         @endif
+        @if(session('error'))
+            <div class="bg-red-100 text-red-700 p-3 rounded mb-4">{{ session('error') }}</div>
+        @endif
+        @if($updateInfo = session('update_info'))
+            <div class="bg-blue-100 text-blue-700 p-3 rounded mb-4">
+                @if($updateInfo['update_available'] ?? false)
+                    Update available! Remote: {{ $updateInfo['remote_digest'] }} | Local: {{ $updateInfo['current_digest'] }}
+                @elseif(isset($updateInfo['error']))
+                    Check failed: {{ $updateInfo['error'] }}
+                @else
+                    Image is up to date ({{ $updateInfo['current_digest'] }})
+                @endif
+            </div>
+        @endif
 
         <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex justify-between mb-4">
+            <div class="flex justify-between items-start mb-4">
                 <h2 class="text-2xl font-bold">Factions</h2>
-                <a href="/admin/factions/create" class="bg-red-500 text-white px-4 py-2 rounded">Create New</a>
+                <div class="flex gap-2">
+                    <a href="{{ route('admin.check-update') }}" class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600">Check Update</a>
+                    <form method="POST" action="{{ route('admin.update-all') }}" class="inline" onsubmit="return confirm('Stop all instances, update image, and restart? This will cause brief downtime.')">
+                        @csrf
+                        <button class="bg-yellow-500 text-white px-4 py-2 rounded text-sm hover:bg-yellow-600">Update All</button>
+                    </form>
+                    <a href="/admin/factions/create" class="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600">Create New</a>
+                </div>
             </div>
 
             <table class="w-full">
