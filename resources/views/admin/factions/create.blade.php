@@ -33,6 +33,18 @@
                     <input type="checkbox" name="is_trial" id="is_trial" value="1" class="w-4 h-4">
                     <label for="is_trial" class="text-gray-700">Free / Trial</label>
                 </div>
+                <div class="mb-4">
+                    <label class="block mb-2">Payment Status</label>
+                    <select name="payment" class="w-full border p-2 rounded">
+                        <option value="Due">Due</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Disabled">Disabled</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2">Amount (£)</label>
+                    <input type="number" name="amount" step="0.01" value="0" class="w-full border p-2 rounded">
+                </div>
                 <button type="submit" class="w-full bg-red-500 text-white p-2 rounded">Create Faction</button>
             </form>
         </div>

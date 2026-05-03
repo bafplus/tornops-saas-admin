@@ -54,6 +54,8 @@
                         <th class="text-left p-2">Name</th>
                         <th class="text-left p-2">Slug</th>
                         <th class="text-left p-2">Faction ID</th>
+                        <th class="text-left p-2">Payment</th>
+                        <th class="text-left p-2">Amount</th>
                         <th class="text-left p-2">Trial</th>
                         <th class="text-left p-2">Status</th>
                         <th class="text-left p-2">Actions</th>
@@ -65,6 +67,12 @@
                         <td class="p-2">{{ $faction->name }}</td>
                         <td class="p-2">{{ $faction->slug }}</td>
                         <td class="p-2">{{ $faction->torn_faction_id }}</td>
+                        <td class="p-2">
+                            <span class="px-2 py-1 rounded {{ $faction->payment == 'Paid' ? 'bg-green-100 text-green-700' : ($faction->payment == 'Due' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500') }}">
+                                {{ $faction->payment ?? 'Due' }}
+                            </span>
+                        </td>
+                        <td class="p-2">£{{ number_format($faction->amount ?? 0, 2) }}</td>
                         <td class="p-2">
                             <span class="px-2 py-1 rounded {{ $faction->is_trial ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500' }}">
                                 {{ $faction->is_trial ? 'Free' : '-' }}

@@ -8,11 +8,13 @@ class Faction extends Model
 {
     protected $fillable = [
         'name', 'slug', 'torn_faction_id', 'master_key',
-        'port', 'status', 'is_trial', 'monthly_cost', 'log'
+        'port', 'status', 'is_trial', 'monthly_cost', 'log',
+        'payment', 'amount',
     ];
 
     protected $casts = [
         'is_trial' => 'boolean',
+        'amount' => 'decimal:2',
     ];
 
     public function isRunning(): bool

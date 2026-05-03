@@ -43,6 +43,8 @@ class FactionController extends Controller
             'master_key' => $masterKey,
             'status' => 'creating',
             'is_trial' => $request->boolean('is_trial'),
+            'payment' => $request->payment ?? 'Due',
+            'amount' => $request->amount ?? 0,
         ]);
 
         $result = $this->factionService->createFactionInstance($faction);
@@ -102,6 +104,8 @@ class FactionController extends Controller
             'slug' => $newSlug,
             'torn_faction_id' => $request->torn_faction_id,
             'is_trial' => $request->boolean('is_trial'),
+            'payment' => $request->payment ?? 'Due',
+            'amount' => $request->amount ?? 0,
         ]);
 
         if ($oldSlug !== $newSlug) {

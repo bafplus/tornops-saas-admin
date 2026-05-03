@@ -35,6 +35,18 @@
                     <input type="checkbox" name="is_trial" id="is_trial" value="1" class="w-4 h-4" {{ $faction->is_trial ? 'checked' : '' }}>
                     <label for="is_trial" class="text-gray-700">Free / Trial</label>
                 </div>
+                <div class="mb-4">
+                    <label class="block mb-2">Payment Status</label>
+                    <select name="payment" class="w-full border p-2 rounded">
+                        <option value="Due" {{ $faction->payment == 'Due' ? 'selected' : '' }}>Due</option>
+                        <option value="Paid" {{ $faction->payment == 'Paid' ? 'selected' : '' }}>Paid</option>
+                        <option value="Disabled" {{ $faction->payment == 'Disabled' ? 'selected' : '' }}>Disabled</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2">Amount (£)</label>
+                    <input type="number" name="amount" step="0.01" value="{{ $faction->amount ?? 0 }}" class="w-full border p-2 rounded">
+                </div>
                 <div class="flex gap-2">
                     <button type="submit" class="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600">Save Changes</button>
                     <a href="/admin/factions" class="flex-1 bg-gray-300 text-gray-700 p-2 rounded text-center hover:bg-gray-400">Cancel</a>
