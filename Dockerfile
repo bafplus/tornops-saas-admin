@@ -22,9 +22,13 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 RUN groupadd -g 111 docker && usermod -aG docker www-data
 
+# Install cron
+RUN apt-get update && apt-get install -y cron && apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    echo '* * * * * php /var/www/html/artisan schedule:run >> /var/www/html/storage/logs/scheduler.log 2>&1' | crontab -
+
 COPY . /var/www/html/
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 WORKDIR /var/www/html
 EXPOSE 80
-CMD ["apache2-foreground"]
+CMD bash -c "cron && apache2-foreground"
