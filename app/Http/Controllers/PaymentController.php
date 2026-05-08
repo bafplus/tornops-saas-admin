@@ -9,6 +9,13 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
+    protected \App\Services\FactionService $factionService;
+
+    public function __construct(\App\Services\FactionService $factionService)
+    {
+        $this->factionService = $factionService;
+    }
+
     public function index()
     {
         $payments = PaymentHistory::orderBy('created_at', 'desc')->paginate(50);
@@ -55,6 +62,9 @@ class PaymentController extends Controller
             'matched_instance' => true,
             'manual' => true,
         ]);
+
+        // Sync subscription to instance
+        $this->factionService->syncSubscriptionToInstance($faction);
 
         return redirect()->route('admin.payments')->with('success', "Payment recorded. {$faction->name} expires {$newExpiry->format('Y-m-d')}");
     }

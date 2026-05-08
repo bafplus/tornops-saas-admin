@@ -120,6 +120,9 @@ class FactionController extends Controller
             $faction->save();
         }
 
+        // Sync subscription to instance
+        $this->factionService->syncSubscriptionToInstance($faction);
+
         return redirect()->route('admin.factions')->with('success', 'Faction updated successfully');
     }
 

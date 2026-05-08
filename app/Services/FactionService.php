@@ -194,6 +194,35 @@ class FactionService
         return $newKey;
     }
 
+    public function syncSubscriptionToInstance(Faction $faction): void
+    {
+        $containerName = $faction->slug;
+        $expiresAt = $faction->expires_at ? $faction->expires_at->format('Y-m-d H:i:s') : '';
+        $subscriptionStart = $faction->subscription_start ? $faction->subscription_start->format('Y-m-d H:i:s') : '';
+        $status = $faction->expires_at && $faction->expires_at->isPast() ? 'expired' : ($faction->subscription_type ?? 'active');
+
+        $script = "<?php
+\$pdo = new PDO('sqlite:/data/database.sqlite');
+\$start = '" . addslashes($subscriptionStart) . "';
+\$expires = '" . addslashes($expiresAt) . "';
+\$sql = \"UPDATE faction_settings SET
+    subscription_status = '{$status}',
+    subscription_start = CASE WHEN subscription_start IS NOT NULL THEN subscription_start ELSE datetime('now') END,
+    payment_item = '{$faction->payment_item}',
+    payment_amount = {$faction->payment_amount}
+\";
+if (\$expires) \$sql .= \", expires_at = '\" . addslashes(\$expires) . \"'\";
+\$pdo->exec(\$sql);
+";
+
+        file_put_contents("/tmp/sync_{$containerName}.php", $script);
+        exec("docker cp /tmp/sync_{$containerName}.php {$containerName}:/tmp/sync.php 2>&1", $cpOut, $cpCode);
+        if ($cpCode === 0) {
+            exec("docker exec {$containerName} php /tmp/sync.php 2>&1", $execOut, $execCode);
+        }
+        @unlink("/tmp/sync_{$containerName}.php");
+    }
+
     public function checkForImageUpdate(): array
     {
         $image = $this->image;

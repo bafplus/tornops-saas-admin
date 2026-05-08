@@ -183,5 +183,13 @@ class SyncPaymentLog extends Command
         $faction->save();
 
         $this->info("Updated faction {$faction->name}: expires {$newExpiry->format('Y-m-d')}");
+
+        // Sync to instance container
+        $slug = $faction->slug;
+        $expiresStr = $newExpiry->format('Y-m-d H:i:s');
+        $startStr = $faction->subscription_start->format('Y-m-d H:i:s');
+        $phpCmd = "\\\$pdo=new PDO('sqlite:/data/database.sqlite'); \\\$pdo->exec(\"UPDATE faction_settings SET subscription_status='active', subscription_start=COALESCE(subscription_start,'{$startStr}'), expires_at='{$expiresStr}', payment_item='{$faction->payment_item}', payment_amount={$faction->payment_amount}\");";
+        exec("docker exec {$slug} php -r \"{$phpCmd}\" 2>&1", $out, $code);
+        $this->info("Sync to {$slug}: " . ($code === 0 ? 'OK' : implode("\n", $out)));
     }
 }
