@@ -184,12 +184,33 @@ class SyncPaymentLog extends Command
 
         $this->info("Updated faction {$faction->name}: expires {$newExpiry->format('Y-m-d')}");
 
-        // Sync to instance container
+        // Sync to instance container using the same method as FactionService
         $slug = $faction->slug;
         $expiresStr = $newExpiry->format('Y-m-d H:i:s');
         $startStr = $faction->subscription_start->format('Y-m-d H:i:s');
-        $phpCmd = "\\\$pdo=new PDO('sqlite:/data/database.sqlite'); \\\$pdo->exec(\"UPDATE faction_settings SET subscription_status='active', subscription_start=COALESCE(subscription_start,'{$startStr}'), expires_at='{$expiresStr}', payment_item='{$faction->payment_item}', payment_amount={$faction->payment_amount}\");";
-        exec("docker exec {$slug} php -r \"{$phpCmd}\" 2>&1", $out, $code);
-        $this->info("Sync to {$slug}: " . ($code === 0 ? 'OK' : implode("\n", $out)));
+        $paymentItem = $faction->payment_item ?? 'xanax';
+        $paymentAmount = $faction->payment_amount ?? 1;
+
+        $script = "<?php
+\$pdo = new PDO('sqlite:/data/database.sqlite');
+\$sql = \"UPDATE faction_settings SET
+    subscription_status = 'active',
+    subscription_start = COALESCE(subscription_start, datetime('now')),
+    expires_at = '{$expiresStr}',
+    payment_item = '{$paymentItem}',
+    payment_amount = {$paymentAmount}
+\";
+\$pdo->exec(\$sql);
+";
+        $tmpFile = "/tmp/sync_{$slug}.php";
+        file_put_contents($tmpFile, $script);
+        exec("docker cp {$tmpFile} {$slug}:/tmp/sync.php 2>&1", $out, $cpCode);
+        if ($cpCode === 0) {
+            exec("docker exec {$slug} php /tmp/sync.php 2>&1", $execOut, $execCode);
+            $this->info("Sync to {$slug}: " . ($execCode === 0 ? 'OK' : 'FAILED'));
+        } else {
+            $this->warn("Sync to {$slug}: docker cp failed");
+        }
+        @unlink($tmpFile);
     }
 }
