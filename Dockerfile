@@ -22,9 +22,18 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 RUN groupadd -g 111 docker && usermod -aG docker www-data
 
+# Install Docker CLI and Compose binaries
+RUN curl -SL https://download.docker.com/linux/static/stable/x86_64/docker-25.0.0.tgz -o /tmp/docker.tgz && \
+    tar -xzf /tmp/docker.tgz -C /tmp && \
+    cp /tmp/docker/docker /usr/local/bin/docker && \
+    chmod +x /usr/local/bin/docker && \
+    curl -SL https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose && \
+    rm -rf /tmp/docker.tgz /tmp/docker
+
 # Install cron
 RUN apt-get update && apt-get install -y cron && apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    echo '* * * * * php /var/www/html/artisan schedule:run >> /var/www/html/storage/logs/scheduler.log 2>&1' | crontab -
+    echo '* * * * * /usr/local/bin/php /var/www/html/artisan torn:sync-payments >> /var/www/html/storage/logs/scheduler.log 2>&1' | crontab -
 
 COPY . /var/www/html/
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
