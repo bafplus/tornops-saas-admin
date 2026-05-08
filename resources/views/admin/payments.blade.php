@@ -9,13 +9,14 @@
     <nav class="bg-white shadow p-4">
         <div class="container mx-auto flex justify-between">
             <div class="flex items-center gap-4">
-                <a href="/admin/factions" class="text-xl font-bold">TornOps Admin</a>
+                <a href="/admin/factions" class="text-xl font-bold text-gray-800"><i class="fa-solid fa-building"></i> TornOps Admin</a>
+                <a href="/admin/factions" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-list"></i> Factions</a>
                 <a href="/admin/settings" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i> Settings</a>
                 <a href="/admin/payments" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-credit-card"></i> Payments</a>
             </div>
             <form method="POST" action="/admin/logout">
                 @csrf
-                <button class="text-red-500">Logout</button>
+                <button class="text-red-500"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
             </form>
         </div>
     </nav>
@@ -24,6 +25,29 @@
         @if(session('success'))
             <div class="bg-green-100 text-green-700 p-3 rounded mb-4">{{ session('success') }}</div>
         @endif
+
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <h3 class="font-semibold"><i class="fa-solid fa-clock"></i> Payment Sync</h3>
+                    <span class="text-sm text-gray-500">
+                        Last run:
+                        @if($lastEventRun = \App\Models\AdminSetting::get('last_event_run'))
+                            {{ \Carbon\Carbon::createFromTimestamp((int)$lastEventRun)->format('d M Y H:i:s') }}
+                        @else
+                            <span class="text-yellow-600">Never</span>
+                        @endif
+                    </span>
+                    <span class="text-sm text-gray-400">| Next: every minute</span>
+                </div>
+                <form method="POST" action="{{ route('admin.payments.run') }}" class="inline">
+                    @csrf
+                    <button class="bg-blue-500 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-600">
+                        <i class="fa-solid fa-play"></i> Run Now
+                    </button>
+                </form>
+            </div>
+        </div>
 
         <div class="flex justify-between mb-4">
             <h2 class="text-2xl font-bold">Payments</h2>

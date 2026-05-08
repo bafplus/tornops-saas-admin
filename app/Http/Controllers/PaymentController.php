@@ -71,4 +71,16 @@ class PaymentController extends Controller
 
         return back()->with('success', 'Payment matched to ' . $faction->name);
     }
+
+    public function runSync()
+    {
+        $exitCode = \Illuminate\Support\Facades\Artisan::call('torn:sync-payments');
+        $output = \Illuminate\Support\Facades\Artisan::output();
+
+        if ($exitCode === 0) {
+            return redirect()->route('admin.payments')->with('success', 'Payment sync completed. ' . $output);
+        }
+
+        return redirect()->route('admin.payments')->with('error', 'Payment sync failed: ' . $output);
+    }
 }

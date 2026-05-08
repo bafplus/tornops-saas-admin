@@ -34,6 +34,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/payments', [PaymentController::class, 'index'])->name('admin.payments');
     Route::post('/admin/payments', [PaymentController::class, 'store']);
     Route::post('/admin/payments/{payment}/match', [PaymentController::class, 'match'])->name('admin.payments.match');
+    Route::post('/admin/payments/run', [PaymentController::class, 'runSync'])->name('admin.payments.run');
 
     // Admin settings
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings');

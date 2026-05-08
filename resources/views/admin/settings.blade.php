@@ -9,13 +9,14 @@
     <nav class="bg-white shadow p-4">
         <div class="container mx-auto flex justify-between">
             <div class="flex items-center gap-4">
-                <a href="/admin/factions" class="text-xl font-bold">TornOps Admin</a>
+                <a href="/admin/factions" class="text-xl font-bold text-gray-800"><i class="fa-solid fa-building"></i> TornOps Admin</a>
+                <a href="/admin/factions" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-list"></i> Factions</a>
                 <a href="/admin/settings" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i> Settings</a>
                 <a href="/admin/payments" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-credit-card"></i> Payments</a>
             </div>
             <form method="POST" action="/admin/logout">
                 @csrf
-                <button class="text-red-500">Logout</button>
+                <button class="text-red-500"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
             </form>
         </div>
     </nav>
