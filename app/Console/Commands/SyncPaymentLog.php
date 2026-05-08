@@ -40,17 +40,14 @@ class SyncPaymentLog extends Command
             $events = $data['events'] ?? [];
 
             if (empty($events)) {
-                // Advance last run so we don't re-fetch
-                if (!$lastRun) {
-                    AdminSetting::set('last_event_run', (string) now()->timestamp);
-                }
-                $this->info('No new events.');
+                // Always advance last run so we don't re-fetch empty results
+                AdminSetting::set('last_event_run', (string) now()->timestamp);
+                $this->info('No new events. Last run timestamp updated.');
                 return Command::SUCCESS;
             }
 
             $processed = 0;
             $matched = 0;
-            $latestTimestamp = $lastRun ? (int) $lastRun : 0;
 
             foreach ($events as $event) {
                 $eventId = $event['id'] ?? null;
@@ -59,10 +56,6 @@ class SyncPaymentLog extends Command
 
                 if (!$eventId || !$timestamp) {
                     continue;
-                }
-
-                if ($timestamp > $latestTimestamp) {
-                    $latestTimestamp = $timestamp;
                 }
 
                 if (PaymentHistory::where('event_id', $eventId)->exists()) {
@@ -119,7 +112,8 @@ class SyncPaymentLog extends Command
                 $processed++;
             }
 
-            AdminSetting::set('last_event_run', (string) $latestTimestamp);
+            // Always update last run to current time so we don't re-fetch
+            AdminSetting::set('last_event_run', (string) now()->timestamp);
 
             $this->info("Processed {$processed} events, {$matched} matched to instances.");
             return Command::SUCCESS;
