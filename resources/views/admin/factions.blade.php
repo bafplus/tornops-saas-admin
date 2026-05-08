@@ -9,10 +9,14 @@
     <nav class="bg-white shadow p-4">
         <div class="container mx-auto flex justify-between">
             <h1 class="text-xl font-bold">TornOps Admin</h1>
-            <form method="POST" action="/admin/logout">
-                @csrf
-                <button class="text-red-500">Logout</button>
-            </form>
+            <div class="flex items-center gap-2">
+                <a href="/admin/settings" class="text-lg font-bold text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
+                <a href="/admin/payments" class="text-lg font-bold text-gray-500 hover:text-gray-700"><i class="fa-solid fa-credit-card"></i></a>
+                <form method="POST" action="/admin/logout">
+                    @csrf
+                    <button class="text-red-500"><i class="fa-solid fa-sign-out-alt"></i></button>
+                </form>
+            </div>
         </div>
     </nav>
 
@@ -54,8 +58,8 @@
                         <th class="text-left p-2">Name</th>
                         <th class="text-left p-2">Slug</th>
                         <th class="text-left p-2">Faction ID</th>
-                        <th class="text-left p-2">Payment</th>
-                        <th class="text-left p-2">Amount</th>
+                        <th class="text-left p-2">Subscription</th>
+                        <th class="text-left p-2">Expires</th>
                         <th class="text-left p-2">Trial</th>
                         <th class="text-left p-2">Status</th>
                         <th class="text-left p-2">Actions</th>
@@ -68,15 +72,32 @@
                         <td class="p-2">{{ $faction->slug }}</td>
                         <td class="p-2">{{ $faction->torn_faction_id }}</td>
                         <td class="p-2">
-                            <span class="px-2 py-1 rounded {{ $faction->payment == 'Paid' ? 'bg-green-100 text-green-700' : ($faction->payment == 'Due' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500') }}">
-                                {{ $faction->payment ?? 'Due' }}
+                            <span class="px-2 py-1 rounded {{ $faction->subscription_type == 'paid' ? 'bg-green-100 text-green-700' : ($faction->subscription_type == 'trial' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500') }}">
+                                {{ $faction->subscription_type ?? 'free' }}
                             </span>
                         </td>
-                        <td class="p-2">{{ $faction->amount ?? 0 }}</td>
+                        <td class="p-2 text-sm">
+                            @if($faction->expires_at)
+                                {{ $faction->expires_at->format('d M Y') }}
+                                @if($faction->expires_at->isPast())
+                                    <span class="text-red-500">(Expired)</span>
+                                @else
+                                    <span class="text-green-500">({{ $faction->expires_at->diffInDays(now()) }}d)</span>
+                                @endif
+                            @elseif($faction->subscription_type === 'free')
+                                <span class="text-gray-400">—</span>
+                            @else
+                                <span class="text-red-400">Not set</span>
+                            @endif
+                        </td>
                         <td class="p-2">
-                            <span class="px-2 py-1 rounded {{ $faction->is_trial ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500' }}">
-                                {{ $faction->is_trial ? 'Free' : '-' }}
-                            </span>
+                            @if($faction->is_trial)
+                                <span class="text-blue-600">Yes</span>
+                            @elseif($faction->trial_used)
+                                <span class="text-gray-400">Used</span>
+                            @else
+                                <span class="text-gray-400">—</span>
+                            @endif
                         </td>
                         <td class="p-2">
                             <span class="px-2 py-1 rounded {{ $faction->isRunning() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">

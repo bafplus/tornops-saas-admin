@@ -43,8 +43,9 @@ class FactionController extends Controller
             'master_key' => $masterKey,
             'status' => 'creating',
             'is_trial' => $request->boolean('is_trial'),
-            'payment' => $request->payment ?? 'Due',
-            'amount' => $request->amount ?? 0,
+            'subscription_type' => $request->subscription_type ?? 'free',
+            'payment_item' => $request->payment_item ?? 'xanax',
+            'payment_amount' => $request->payment_amount ?? 1,
         ]);
 
         $result = $this->factionService->createFactionInstance($faction);
@@ -104,9 +105,14 @@ class FactionController extends Controller
             'slug' => $newSlug,
             'torn_faction_id' => $request->torn_faction_id,
             'is_trial' => $request->boolean('is_trial'),
-            'payment' => $request->payment ?? 'Due',
-            'amount' => $request->amount ?? 0,
+            'subscription_type' => $request->subscription_type ?? 'free',
+            'payment_item' => $request->payment_item ?? 'xanax',
+            'payment_amount' => $request->payment_amount ?? 1,
         ]);
+
+        if ($request->expires_at) {
+            $faction->expires_at = $request->expires_at;
+        }
 
         if ($oldSlug !== $newSlug) {
             $this->factionService->updateInstance($faction, $oldSlug);

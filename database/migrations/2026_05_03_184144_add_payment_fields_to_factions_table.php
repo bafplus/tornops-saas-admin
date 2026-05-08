@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('factions', function (Blueprint $table) {
@@ -21,16 +18,6 @@ return new class extends Migration
     {
         Schema::table('factions', function (Blueprint $table) {
             $table->dropColumn(['payment', 'amount']);
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('factions', function (Blueprint $table) {
-            //
         });
     }
 };

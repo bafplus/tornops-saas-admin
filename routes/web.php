@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FactionController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AdminSettingsController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -27,5 +29,15 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/admin/factions/{faction}', [FactionController::class, 'update'])->name('admin.factions.update');
     Route::get('/admin/check-update', [FactionController::class, 'checkUpdate'])->name('admin.check-update');
     Route::post('/admin/update-all', [FactionController::class, 'updateAll'])->name('admin.update-all');
+
+    // Payment management
+    Route::get('/admin/payments', [PaymentController::class, 'index'])->name('admin.payments');
+    Route::post('/admin/payments', [PaymentController::class, 'store']);
+    Route::post('/admin/payments/{payment}/match', [PaymentController::class, 'match'])->name('admin.payments.match');
+
+    // Admin settings
+    Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings');
+    Route::put('/admin/settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
+
     Route::post('/admin/logout', [AuthController::class, 'logout']);
 });
