@@ -48,7 +48,6 @@ class SyncPaymentLog extends Command
 
             $processed = 0;
             $matched = 0;
-            $latestEventTimestamp = 0;
 
             foreach ($events as $event) {
                 $eventId = $event['id'] ?? null;
@@ -57,11 +56,6 @@ class SyncPaymentLog extends Command
 
                 if (!$eventId || !$timestamp) {
                     continue;
-                }
-
-                // Track the highest event timestamp for next run
-                if ($timestamp > $latestEventTimestamp) {
-                    $latestEventTimestamp = $timestamp;
                 }
 
                 if (PaymentHistory::where('event_id', $eventId)->exists()) {
@@ -118,8 +112,8 @@ class SyncPaymentLog extends Command
                 $processed++;
             }
 
-            // Update last run to the latest event timestamp so we don't re-fetch
-            AdminSetting::set('last_event_run', (string) $latestEventTimestamp);
+            // Always update to current time to avoid re-fetching
+            AdminSetting::set('last_event_run', (string) now()->timestamp);
 
             $this->info("Processed {$processed} events, {$matched} matched to instances.");
             return Command::SUCCESS;
@@ -133,30 +127,29 @@ class SyncPaymentLog extends Command
 
     private function parseReceivedItem(string $html): ?array
     {
-        // Strip HTML tags to get plain text
         $text = strip_tags($html);
-        // Decode HTML entities
         $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
 
-        // Pattern: "PlayerName sent you Xx ItemName. (Description: ...)"
-        // Or: "PlayerName sent you Xx ItemName"
-        if (!preg_match('/^\s*([A-Za-z0-9_\-\[\]]+)\s+sent\s+you\s+(\d+)x\s+([A-Za-z0-9\s\-]+?)(?:\.\s*$|\.\s*\(|$)/i', $text, $m)) {
+        // Format: "You were sent Xx Item from Player" or "You were sent a Item from Player"
+        if (!preg_match('/^You were sent (?:a|an|(\d+))x?\s+(.+?)\s+from\s+([A-Za-z0-9_\-\[\]]+)/i', $text, $m)) {
             return null;
         }
 
-        $payerName = trim($m[1]);
-        $quantity = (int) $m[2];
-        $itemName = trim($m[3]);
+        $quantity = $m[1] !== '' ? (int) $m[1] : 1;
+        $itemName = trim($m[2]);
+        // Strip trailing punctuation from item name
+        $itemName = preg_replace('/[.,;:!?]+$/', '', $itemName);
+        $payerName = trim($m[3]);
 
-        // Try to extract player ID from the HTML link
+        // Extract player ID from HTML link
         $payerId = null;
         if (preg_match('/profiles\.php\?XID=(\d+)/', $html, $idMatch)) {
             $payerId = (int) $idMatch[1];
         }
 
-        // Extract description from parentheses after the item name
+        // Extract description from "with the message: ..."
         $description = '';
-        if (preg_match('/\.\s*\((.*?)\)\s*$/', $text, $descMatch)) {
+        if (preg_match('/with the message:\s*(.*?)$/i', $text, $descMatch)) {
             $description = trim($descMatch[1]);
         }
         // Also try "Description:" prefix
