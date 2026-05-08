@@ -86,6 +86,24 @@
         </div>
 
         <div class="bg-white rounded-lg shadow p-6">
+            <form method="GET" action="{{ route('admin.payments') }}" class="flex flex-wrap gap-3 mb-4 p-3 bg-gray-50 rounded">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search payer, item, description..." class="border p-2 rounded text-sm flex-1 min-w-[200px]">
+                <select name="faction_id" class="border p-2 rounded text-sm">
+                    <option value="">All factions</option>
+                    @foreach(\App\Models\Faction::orderBy('name')->get() as $f)
+                        <option value="{{ $f->id }}" {{ request('faction_id') == $f->id ? 'selected' : '' }}>{{ $f->name }}</option>
+                    @endforeach
+                </select>
+                <select name="source" class="border p-2 rounded text-sm">
+                    <option value="">All sources</option>
+                    <option value="matched" {{ request('source') == 'matched' ? 'selected' : '' }}>Matched</option>
+                    <option value="unmatched" {{ request('source') == 'unmatched' ? 'selected' : '' }}>Unmatched</option>
+                    <option value="manual" {{ request('source') == 'manual' ? 'selected' : '' }}>Manual</option>
+                </select>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600"><i class="fa-solid fa-filter"></i> Filter</button>
+                <a href="{{ route('admin.payments') }}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-400"><i class="fa-solid fa-undo"></i> Reset</a>
+            </form>
+
             <table class="w-full">
                 <thead>
                     <tr class="border-b">

@@ -16,9 +16,32 @@ class PaymentController extends Controller
         $this->factionService = $factionService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $payments = PaymentHistory::orderBy('created_at', 'desc')->paginate(50);
+        $query = PaymentHistory::orderBy('created_at', 'desc');
+
+        // Search filters
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('payer_name', 'like', "%{$search}%")
+                  ->orWhere('item_name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('event_id', 'like', "%{$search}%");
+            });
+        }
+        if ($factionId = $request->input('faction_id')) {
+            $query->where('faction_id', $factionId);
+        }
+        if ($source = $request->input('source')) {
+            if ($source === 'matched') $query->where('matched_instance', true);
+            elseif ($source === 'unmatched') $query->where('matched_instance', false)->where('manual', false);
+            elseif ($source === 'manual') $query->where('manual', true);
+        }
+        if ($item = $request->input('item')) {
+            $query->where('item_name', $item);
+        }
+
+        $payments = $query->paginate(50)->withQueryString();
         $settings = [
             'default_payment_item' => AdminSetting::get('default_payment_item', 'xanax'),
             'default_payment_amount' => AdminSetting::get('default_payment_amount', '1'),
