@@ -12,10 +12,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Payment log sync runs every minute
-        $schedule->command('torn:sync-payments')
-            ->everyMinute()
-            ->withoutOverlapping()
-            ->runInBackground();
+        $schedule->command('torn:sync-payments')->everyMinute();
 
         $isWarMode = RankedWar::where('status', 'in progress')->exists();
         

@@ -48,6 +48,7 @@ class SyncPaymentLog extends Command
 
             $processed = 0;
             $matched = 0;
+            $latestEventTimestamp = 0;
 
             foreach ($events as $event) {
                 $eventId = $event['id'] ?? null;
@@ -56,6 +57,11 @@ class SyncPaymentLog extends Command
 
                 if (!$eventId || !$timestamp) {
                     continue;
+                }
+
+                // Track the highest event timestamp for next run
+                if ($timestamp > $latestEventTimestamp) {
+                    $latestEventTimestamp = $timestamp;
                 }
 
                 if (PaymentHistory::where('event_id', $eventId)->exists()) {
@@ -112,8 +118,8 @@ class SyncPaymentLog extends Command
                 $processed++;
             }
 
-            // Always update last run to current time so we don't re-fetch
-            AdminSetting::set('last_event_run', (string) now()->timestamp);
+            // Update last run to the latest event timestamp so we don't re-fetch
+            AdminSetting::set('last_event_run', (string) $latestEventTimestamp);
 
             $this->info("Processed {$processed} events, {$matched} matched to instances.");
             return Command::SUCCESS;
