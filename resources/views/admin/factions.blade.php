@@ -83,7 +83,7 @@
                                 @if($faction->expires_at->isPast())
                                     <span class="text-red-500">(Expired)</span>
                                 @else
-                                    <span class="text-green-500">({{ $faction->expires_at->diffInDays(now()) }}d)</span>
+                                    <span class="text-green-500">({{ (int) $faction->expires_at->diffInDays(now()) }}d)</span>
                                 @endif
                             @elseif($faction->subscription_type === 'free')
                                 <span class="text-gray-400">—</span>
