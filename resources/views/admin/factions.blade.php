@@ -79,7 +79,7 @@
                         </td>
                         <td class="p-2 text-sm">
                             @if($faction->expires_at)
-                                {{ $faction->expires_at->format('d M Y') }}
+                                {{ $faction->expires_at->format('d M Y H:i') }}
                                 @if($faction->expires_at->isPast())
                                     <span class="text-red-500">(Expired)</span>
                                 @else
