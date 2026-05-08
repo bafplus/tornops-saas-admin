@@ -21,6 +21,7 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->boolean('matched_instance')->default(false);
             $table->boolean('manual')->default(false);
+            $table->text('raw_event')->nullable();
             $table->timestamps();
         });
     }

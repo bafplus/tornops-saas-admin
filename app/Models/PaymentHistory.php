@@ -11,7 +11,7 @@ class PaymentHistory extends Model
     protected $fillable = [
         'faction_id', 'event_id', 'item_name', 'quantity', 'description',
         'payer_name', 'payer_id', 'extension_days', 'expires_at',
-        'matched_instance', 'manual',
+        'matched_instance', 'manual', 'raw_event',
     ];
 
     protected $casts = [

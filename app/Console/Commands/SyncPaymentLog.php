@@ -107,6 +107,7 @@ class SyncPaymentLog extends Command
                     'extension_days' => $quantity * 7,
                     'expires_at' => $factionId ? Faction::find($factionId)?->expires_at : null,
                     'matched_instance' => $matchedInstance,
+                    'raw_event' => $eventHtml,
                 ]);
 
                 $processed++;

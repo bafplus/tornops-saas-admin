@@ -116,6 +116,15 @@
                             @else
                                 <span class="text-yellow-600 text-sm"><i class="fa-solid fa-question"></i> Unmatched</span>
                             @endif
+                            @if($payment->raw_event)
+                            <div class="relative inline-block group">
+                                <i class="fa-solid fa-scroll text-xs text-gray-400 hover:text-gray-600 cursor-help" title="Click to view raw event"></i>
+                                <div class="absolute bottom-full right-0 mb-2 w-96 p-3 bg-gray-800 text-gray-200 text-xs rounded-lg shadow-xl hidden group-hover:block z-50 break-all">
+                                    <div class="font-semibold mb-1 text-gray-400">Raw Event:</div>
+                                    {{ strip_tags($payment->raw_event) }}
+                                </div>
+                            </div>
+                            @endif
                         </td>
                         <td class="p-2">
                             @if(!$payment->matched_instance && !$payment->manual)
