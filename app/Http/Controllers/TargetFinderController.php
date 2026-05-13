@@ -184,7 +184,7 @@ class TargetFinderController extends Controller
                     }
                 }
 
-                $target['attackUrl'] = 'https://www.torn.com/loader.php?sid=attack&user2ID=' . $target['player_id'];
+                $target['attackUrl'] = 'https://www.torn.com/page.php?sid=attack&user2ID=' . $target['player_id'];
                 $target['inactiveFormatted'] = $this->formatInactiveTime($target['last_action'] ?? null);
                 $target['estStats'] = $target['bs_estimate_human'] ?? 'N/A';
 

@@ -98,7 +98,7 @@
                 @forelse($retaliationTargets as $target)
                 <div class="flex items-center justify-between bg-orange-900/20 rounded p-3 border border-orange-800/50" data-retaliation-expires="{{ $target['expires_at']->timestamp }}">
                     <div>
-                        <a href="https://www.torn.com/loader.php?sid=attack&user2ID={{ $target['target_id'] }}" target="_blank" class="font-medium text-orange-300 hover:text-orange-200">{{ $target['target_name'] }}</a>
+                        <a href="https://www.torn.com/page.php?sid=attack&user2ID={{ $target['target_id'] }}" target="_blank" class="font-medium text-orange-300 hover:text-orange-200">{{ $target['target_name'] }}</a>
                         <span class="text-gray-400 text-sm ml-2">hit {{ $target['attacked_by'] }}</span>
                     </div>
                     <div class="font-mono text-orange-400 text-lg retaliation-timer"></div>
@@ -327,7 +327,7 @@
                         <tr class="hover:bg-gray-700/30 {{ $leavingSoon ? 'bg-red-900/20' : '' }}" data-name="{{ strtolower($member->name) }}" data-level="{{ $member->level }}" data-ff="{{ $member->ff_score ?? 0 }}" data-stats="{{ $member->estimated_stats ?? '' }}" data-status="{{ $member->status_description ?? '' }}" data-status-type="{{ $statusType }}">
                             <td class="p-3">
                                 <span class="inline-block w-2 h-2 rounded-full mr-2 @if($member->online_status === 'Online') bg-green-500 @elseif($member->online_status === 'Idle') bg-yellow-500 @else bg-gray-500 @endif"></span>
-                                <a href="https://www.torn.com/loader.php?sid=attack&user2ID={{ $member->player_id }}" target="_blank" class="font-medium hover:text-blue-400">{{ $member->name }}</a>
+                                <a href="https://www.torn.com/page.php?sid=attack&user2ID={{ $member->player_id }}" target="_blank" class="font-medium hover:text-blue-400">{{ $member->name }}</a>
                                 @if(in_array($member->player_id, $topTargetIds ?? []))
                                     @php $rank = array_search($member->player_id, $topTargetIds) + 1; @endphp
                                     <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold
