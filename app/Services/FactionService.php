@@ -84,25 +84,47 @@ class FactionService
     public function startContainer(string $slug): bool
     {
         $path = "{$this->basePath}/{$slug}";
-        if (!is_dir($path)) return false;
 
-        $oldDir = getcwd();
-        chdir($path);
-        exec("docker-compose up -d 2>&1");
-        chdir($oldDir);
-        return true;
+        // If docker-compose.yml exists, use docker-compose
+        if (is_dir($path) && file_exists("{$path}/docker-compose.yml")) {
+            $oldDir = getcwd();
+            chdir($path);
+            exec("docker-compose up -d 2>&1");
+            chdir($oldDir);
+            return true;
+        }
+
+        // Fallback: try docker start (container may already exist but stopped)
+        exec("docker start {$slug} 2>&1", $output, $exitCode);
+        if ($exitCode === 0) return true;
+
+        // If container doesn't exist, try docker run using the standard image
+        if (!is_dir($path)) return false;
+        $port = 8082;
+        exec("docker run -d --name {$slug} -v {$path}/data:/data -v {$path}/storage:/app/storage --restart unless-stopped {$this->image} 2>&1", $output, $exitCode);
+        return $exitCode === 0;
     }
 
     public function stopContainer(string $slug): bool
     {
+        // First try docker-compose down if compose file exists
         $path = "{$this->basePath}/{$slug}";
-        if (!is_dir($path)) return false;
+        if (is_dir($path) && file_exists("{$path}/docker-compose.yml")) {
+            $oldDir = getcwd();
+            chdir($path);
+            exec("docker-compose down 2>&1");
+            chdir($oldDir);
+            return true;
+        }
 
-        $oldDir = getcwd();
-        chdir($path);
-        exec("docker-compose down 2>&1");
-        chdir($oldDir);
-        return true;
+        // Fallback: use docker stop (works for containers not started via compose)
+        exec("docker stop {$slug} 2>&1", $output, $exitCode);
+        if ($exitCode === 0) {
+            exec("docker rm {$slug} 2>&1");
+            return true;
+        }
+
+        return false;
     }
 
     public function updateInstance(Faction $faction, string $oldSlug): bool
@@ -226,68 +248,39 @@ if (\$expires) \$sql .= \", expires_at = '\" . addslashes(\$expires) . \"'\";
     public function checkForImageUpdate(): array
     {
         $image = $this->image;
-        $registry = 'https://ghcr.io/v2';
-        $imagePath = 'bafplus/tornops/tornops';
 
-        // Get current local image digest from docker pull check
-        exec("docker pull {$image} 2>&1", $pullOutput, $pullExit);
-        $localDigest = '';
-        foreach ($pullOutput as $line) {
-            if (str_starts_with($line, 'Digest: ')) {
-                $localDigest = trim(substr($line, 8));
-                break;
-            }
-        }
-        if (empty($localDigest)) {
-            // Fallback: get from inspect
-            exec("docker image inspect {$image} --format '{{.Id}}'", $inspectOutput);
-            $localDigest = $inspectOutput[0] ?? '';
-        }
+        // Get current local digest before pulling
+        exec("docker image inspect {$image} --format \"{{.Id}}\" 2>/dev/null", $localOut);
         $localSha = '';
-        if (preg_match('/sha256:[a-f0-9]+/', $localDigest, $m)) {
+        if (!empty($localOut[0]) && preg_match('/sha256:[a-f0-9]+/', $localOut[0], $m)) {
             $localSha = $m[0];
         }
 
-        // Get latest remote OCI index via GHCR API
-        $tokenUrl = "https://ghcr.io/token?scope=repository:{$imagePath}:pull";
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $tokenUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $tokenResponse = curl_exec($ch);
-        curl_close($ch);
-        $token = json_decode($tokenResponse, true)['token'] ?? '';
-
-        if (!$token) {
-            return ['update_available' => false, 'error' => 'Failed to get registry token'];
-        }
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "{$registry}/{$imagePath}/manifests/latest");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer {$token}",
-            'Accept: application/vnd.oci.image.index.v1+json'
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode !== 200) {
-            return ['update_available' => false, 'error' => "Failed to fetch manifest (HTTP {$httpCode})"];
-        }
-
-        // Extract Docker-Content-Digest header (this is the true digest of the OCI index)
+        // Pull to get remote digest (docker pull goes via daemon, has host network)
+        exec("docker pull {$image} 2>&1", $pullOutput, $pullExit);
         $remoteSha = '';
-        if (preg_match('/Docker-Content-Digest:\s*(sha256:[a-f0-9]+)/i', $response, $m)) {
-            $remoteSha = $m[1];
+        foreach ($pullOutput as $line) {
+            if (str_starts_with($line, 'Digest: ')) {
+                $remoteSha = trim(substr($line, 8));
+                break;
+            }
+        }
+        if (empty($remoteSha)) {
+            exec("docker image inspect {$image} --format \"{{.Id}}\"", $inspectOut);
+            if (!empty($inspectOut[0]) && preg_match('/sha256:[a-f0-9]+/', $inspectOut[0], $m)) {
+                $remoteSha = $m[0];
+            }
         }
 
-        $updateAvailable = $localSha !== $remoteSha;
+        if (empty($localSha) && empty($remoteSha)) {
+            return ['update_available' => false, 'error' => 'Could not determine image digest'];
+        }
+
+        $updateAvailable = !empty($localSha) && $remoteSha !== $localSha;
 
         return [
             'update_available' => $updateAvailable,
-            'current_digest' => substr($localSha, 0, 25) . '...',
+            'current_digest' => !empty($localSha) ? substr($localSha, 0, 25) . '...' : 'unknown',
             'remote_digest' => substr($remoteSha, 0, 25) . '...',
         ];
     }
