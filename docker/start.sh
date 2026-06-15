@@ -22,6 +22,16 @@ fi
 
 # Start cron daemon for Laravel scheduler
 echo "Starting cron daemon..."
+
+# Set up cron entries
+cat > /etc/cron.d/tornops-sync << 'CRONEOF'
+* * * * * www-data /usr/local/bin/php /var/www/html/artisan schedule:run >> /dev/null 2>&1
+* * * * * www-data /usr/local/bin/php /var/www/html/artisan torn:sync-payments >> /dev/null 2>&1
+* * * * * root /usr/local/bin/torn-sync-wrapper.sh >> /dev/null 2>&1
+* * * * * root /usr/local/bin/php /var/www/html/artisan torn:sync-active >> /dev/null 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/tornops-sync
+
 service cron start 2>/dev/null || cron 2>/dev/null || true
 
 # Start Apache in foreground (replaces PID 1)
