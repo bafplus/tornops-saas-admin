@@ -185,7 +185,12 @@ chmod +x /usr/local/bin/torn-sync-wrapper.sh
 
 # Main sync wrapper (runs every minute)
 rm -f /etc/cron.d/tornops-sync
-echo "* * * * * root /usr/local/bin/torn-sync-wrapper.sh >> /dev/null 2>&1" > /etc/cron.d/tornops-sync
+
+# Laravel scheduler: runs all scheduled commands (payments, syncs, etc.)
+echo "* * * * * www-data /usr/local/bin/php /var/www/html/artisan schedule:run >> /dev/null 2>&1" > /etc/cron.d/tornops-sync
+
+# War sync wrapper (legacy, runs in parallel)
+echo "* * * * * root /usr/local/bin/torn-sync-wrapper.sh >> /dev/null 2>&1" >> /etc/cron.d/tornops-sync
 
 # Backup: ensure war syncs run if wrapper fails (every minute)
 echo "* * * * * root /usr/local/bin/php /var/www/html/artisan torn:sync-active >> /dev/null 2>&1" >> /etc/cron.d/tornops-sync

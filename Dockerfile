@@ -31,12 +31,16 @@ RUN curl -SL https://download.docker.com/linux/static/stable/x86_64/docker-25.0.
     chmod +x /usr/local/bin/docker-compose && \
     rm -rf /tmp/docker.tgz /tmp/docker
 
-# Install cron (not used in base image, kept for future use)
+# Install cron for Laravel scheduler
 RUN apt-get update && apt-get install -y cron && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Add startup script that starts cron then Apache
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 COPY . /var/www/html/
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 WORKDIR /var/www/html
 EXPOSE 80
-CMD ["apache2-foreground"]
+CMD ["/usr/local/bin/start.sh"]
