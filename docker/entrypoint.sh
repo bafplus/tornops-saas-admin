@@ -10,6 +10,23 @@ git config --global --add safe.directory /var/www/html
 # Ensure /var/www has correct ownership for SQLite
 chown www-data:www-data /var/www
 
+# Fix Docker socket permissions: match host's docker group GID so www-data can access it
+if [ -S "/var/run/docker.sock" ]; then
+    DOCKER_GID=$(stat -c '%g' /var/run/docker.sock 2>/dev/null)
+    if [ -n "$DOCKER_GID" ] && [ "$DOCKER_GID" != "0" ]; then
+        # Check if a group with this GID exists
+        EXISTING_GROUP=$(getent group "$DOCKER_GID" | cut -d: -f1)
+        if [ -z "$EXISTING_GROUP" ]; then
+            # Create a temporary group with the matching GID
+            groupadd -g "$DOCKER_GID" dockerhost
+            usermod -aG dockerhost www-data
+        else
+            usermod -aG "$EXISTING_GROUP" www-data
+        fi
+        echo "Docker socket GID=$DOCKER_GID: added www-data to group ${EXISTING_GROUP:-dockerhost}"
+    fi
+fi
+
 # Clone or pull repository directly to /var/www/html
 if [ -d "/var/www/html/.git" ]; then
     echo "Updating repository..."
